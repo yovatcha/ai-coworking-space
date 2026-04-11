@@ -8,8 +8,12 @@ interface PlayerState {
 }
 
 export function initSocket(httpServer: HttpServer) {
+  const allowedOrigin = process.env.FRONTEND_URL || '*';
   const io = new SocketIOServer(httpServer, {
-    cors: { origin: '*' },
+    cors: {
+      origin: allowedOrigin,
+      methods: ['GET', 'POST'],
+    },
   });
 
   // socketId -> last known state

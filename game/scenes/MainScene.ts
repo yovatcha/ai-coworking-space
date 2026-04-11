@@ -106,8 +106,9 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private setupSocket() {
-    // Explicitly target the same origin — required in Next.js custom server setup
-    this.socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
+    // In production, point to the Railway backend; locally fall back to same origin
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
+    this.socket = io(socketUrl, { transports: ['websocket', 'polling'] });
 
     this.socket.on('connect', () => {
       console.log('[socket] connected as', this.socket.id);
