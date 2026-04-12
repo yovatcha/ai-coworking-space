@@ -29,119 +29,354 @@ export default function LoginPage({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <div className="relative h-screen flex items-center justify-center overflow-hidden bg-[#1a1a2e]">
-      {/* Background video — zoomed 20% */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute w-[120%] h-[120%] -top-[10%] -left-[10%] object-cover z-0"
-      >
-        <source src="/assets/video/login-bg.mp4" type="video/mp4" />
-      </video>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
-      {/* 30% black overlay */}
-      <div className="absolute inset-0 bg-black/30 z-10" />
+        .login-page-bg {
+          position: relative;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          background: #1a1c2c;
+          background-image: radial-gradient(circle, #2a2d3e 1px, transparent 1px);
+          background-size: 16px 16px;
+          font-family: 'Press Start 2P', monospace;
+        }
 
-      {/* Login box */}
-      <div
-        className="relative z-20 flex flex-col gap-4 p-8 w-[340px] bg-[#0a0a1a] border-4 border-[#4f8ef7]"
-        style={{
-          imageRendering: "pixelated",
-          boxShadow: "6px 6px 0px #1a2a6e, inset 0 0 0 2px #0a0a1a",
-        }}
-      >
-        {/* Corner pixels */}
-        <div className="absolute top-0 left-0 w-2 h-2 bg-[#4f8ef7]" />
-        <div className="absolute top-0 right-0 w-2 h-2 bg-[#4f8ef7]" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 bg-[#4f8ef7]" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 bg-[#4f8ef7]" />
+        /* page-level scanlines */
+        .login-page-bg::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent, transparent 3px,
+            rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px
+          );
+          z-index: 0;
+        }
 
-        <img
-          src="/assets/dreamspace-banner.png"
-          alt="Dream Space"
-          className="w-full max-h-[200px] object-contain"
-          style={{ imageRendering: "pixelated" }}
-        />
+        .login-video {
+          position: absolute;
+          width: 120%; height: 120%;
+          top: -10%; left: -10%;
+          object-fit: cover;
+          z-index: 0;
+          opacity: 0.25;
+          image-rendering: pixelated;
+        }
 
-        {/* Pixel divider */}
-        <div className="flex gap-1 justify-center">
-          {Array.from({ length: 16 }).map((_, i) => (
-            <div key={i} className="w-2 h-1 bg-[#4f8ef7] opacity-60" />
-          ))}
-        </div>
+        .login-video-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(10,10,26,0.55);
+          z-index: 1;
+        }
 
-        <p
-          className="text-[#88aaff] text-[9px] p-8 text-center tracking-widest uppercase"
-          style={{ fontFamily: "'Press Start 2P', monospace" }}
-        >
-          Enter Password
-        </p>
+        /* ── Main pixel box ── */
+        .login-box {
+          position: relative;
+          z-index: 2;
+          width: 340px;
+          display: flex;
+          flex-direction: column;
+          background: #1a1c2c;
+          border: 4px solid #5a6988;
+          box-shadow:
+            -4px -4px 0 0 #8faabb,
+             4px  4px 0 0 #0d0f1a,
+             8px  8px 0 0 #000;
+          overflow: hidden;
+        }
 
-        <div className="flex flex-col gap-2 items-center">
-          <div className="relative w-full">
-            {/* Outer pixel frame */}
-            <div className={`p-[3px] ${error ? "bg-red-500" : "bg-[#4f8ef7]"}`}>
-              <div className="bg-[#050510] p-[2px]">
+        /* box-level scanlines */
+        .login-box::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent, transparent 3px,
+            rgba(0,0,0,0.10) 3px, rgba(0,0,0,0.10) 4px
+          );
+          z-index: 10;
+        }
+
+        /* ── Title bar ── */
+        .login-titlebar {
+          background: #0d0f1a;
+          border-bottom: 4px solid #000;
+          padding: 6px 10px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+        .titlebar-dot {
+          width: 8px; height: 8px;
+          box-shadow: 1px 1px 0 #000;
+        }
+        .titlebar-label {
+          font-size: 7px;
+          color: #5a6988;
+          text-shadow: 1px 1px 0 #000;
+          margin-left: 6px;
+          letter-spacing: 0.05em;
+        }
+
+        /* ── Banner ── */
+        .login-banner {
+          background: #050510;
+          padding: 20px 16px 14px;
+          border-bottom: 4px solid #000;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+        }
+        .login-banner-img {
+          width: 100%;
+          max-height: 120px;
+          object-fit: contain;
+          image-rendering: pixelated;
+          opacity: 0.95;
+        }
+        .login-banner-stars {
+          display: flex;
+          gap: 10px;
+        }
+        .login-star {
+          font-size: 8px;
+          color: #f7a84f;
+          text-shadow: 1px 1px 0 #000;
+          animation: pixelTwinkle 1.5s step-start infinite;
+        }
+        .login-star.blue {
+          font-size: 6px;
+          color: #4f8ef7;
+          animation-delay: 0.5s;
+        }
+        @keyframes pixelTwinkle {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.15; }
+        }
+
+        /* ── Pixel divider ── */
+        .pixel-divider {
+          display: flex;
+          flex-direction: column;
+        }
+        .pixel-divider-top    { height: 3px; background: #2a3a6a; }
+        .pixel-divider-mid    { height: 2px; background: #4f8ef7; opacity: 0.4; }
+        .pixel-divider-bottom { height: 3px; background: #0d0f1a; }
+
+        /* ── Body ── */
+        .login-body {
+          padding: 16px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          background: #1a1c2c;
+          background-image: radial-gradient(circle, #2a2d3e 1px, transparent 1px);
+          background-size: 12px 12px;
+        }
+        .login-label {
+          font-size: 8px;
+          color: #88aaff;
+          text-align: center;
+          text-shadow: 2px 2px 0 #000;
+          letter-spacing: 0.1em;
+          margin: 0;
+        }
+
+        /* ── Input ── */
+        .login-input-wrap { position: relative; }
+        .login-input {
+          width: 100%;
+          padding: 11px 14px;
+          font-family: 'Press Start 2P', monospace;
+          font-size: 10px;
+          letter-spacing: 0.15em;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.05s, background 0.05s;
+        }
+        .login-input.normal {
+          background: #050510;
+          color: #e6ecff;
+          border: 3px solid #2a3a6a;
+          box-shadow: inset 2px 2px 0 #000, 3px 3px 0 #000;
+        }
+        .login-input.normal:focus {
+          border-color: #4f8ef7;
+          box-shadow: inset 2px 2px 0 #000, 3px 3px 0 #000, 0 0 0 3px rgba(79,142,247,0.2);
+        }
+        .login-input.has-error {
+          background: #1a0505;
+          color: #ff8888;
+          border: 3px solid #c0392b;
+          box-shadow: inset 2px 2px 0 #000, 3px 3px 0 #000, 0 0 0 3px rgba(192,57,43,0.25);
+          animation: pixelShake 0.3s step-start;
+        }
+        .login-input::placeholder { color: #2a3a6a; }
+
+        .login-input-accent {
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 3px;
+        }
+
+        @keyframes pixelShake {
+          0%   { transform: translateX(0); }
+          20%  { transform: translateX(-4px); }
+          40%  { transform: translateX(4px); }
+          60%  { transform: translateX(-4px); }
+          80%  { transform: translateX(4px); }
+          100% { transform: translateX(0); }
+        }
+
+        /* ── Error msg ── */
+        .login-error {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 0 2px;
+        }
+        .login-error-icon { font-size: 10px; }
+        .login-error-text {
+          font-family: 'Press Start 2P', monospace;
+          font-size: 7px;
+          color: #e74c3c;
+          text-shadow: 1px 1px 0 #000;
+          margin: 0;
+          letter-spacing: 0.05em;
+        }
+
+        /* ── Submit button ── */
+        .login-btn {
+          width: 100%;
+          padding: 12px 0;
+          font-family: 'Press Start 2P', monospace;
+          font-size: 9px;
+          letter-spacing: 0.08em;
+          background: #4f8ef7;
+          color: #000;
+          border: 3px solid #88aaff;
+          box-shadow: 3px 3px 0 #000, -1px -1px 0 #88aaff;
+          cursor: pointer;
+          transition: none;
+        }
+        .login-btn:hover {
+          transform: translate(1px, 1px);
+          box-shadow: 2px 2px 0 #000;
+        }
+        .login-btn:active {
+          transform: translate(2px, 2px);
+          box-shadow: none;
+        }
+
+        /* ── Footer ── */
+        .login-footer {
+          background: #0d0f1a;
+          border-top: 4px solid #000;
+          padding: 6px 10px;
+          text-align: center;
+        }
+        .login-footer-text {
+          font-size: 6px;
+          color: #2a3a6e;
+          text-shadow: 1px 1px 0 #000;
+          letter-spacing: 0.05em;
+        }
+      `}</style>
+
+      <div className="login-page-bg">
+        {/* Background video */}
+        <video autoPlay loop muted playsInline className="login-video">
+          <source src="/assets/video/login-bg.mp4" type="video/mp4" />
+        </video>
+        <div className="login-video-overlay" />
+
+        {/* ── Pixel login box ── */}
+        <div className="login-box">
+
+          {/* Title bar */}
+          <div className="login-titlebar">
+            <div className="titlebar-dot" style={{ background: "#c0392b" }} />
+            <div className="titlebar-dot" style={{ background: "#f7a84f" }} />
+            <div className="titlebar-dot" style={{ background: "#39d353" }} />
+            <span className="titlebar-label">DREAMSPACE — LOGIN</span>
+          </div>
+
+          {/* Banner */}
+          <div className="login-banner">
+            <img
+              src="/assets/dreamspace-banner.png"
+              alt="Dream Space"
+              className="login-banner-img"
+            />
+            <div className="login-banner-stars">
+              <span className="login-star">★</span>
+              <span className="login-star blue">★</span>
+              <span className="login-star" style={{ animationDelay: "1s" }}>★</span>
+            </div>
+          </div>
+
+          {/* Pixel divider */}
+          <div className="pixel-divider">
+            <div className="pixel-divider-top" />
+            <div className="pixel-divider-mid" />
+            <div className="pixel-divider-bottom" />
+          </div>
+
+          {/* Body */}
+          <div className="login-body">
+            <p className="login-label">ENTER PASSWORD</p>
+
+            {/* Input */}
+            <div className="flex flex-col gap-2">
+              <div className="login-input-wrap">
                 <input
                   autoFocus
                   type="password"
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setError(false);
-                  }}
+                  onChange={(e) => { setPassword(e.target.value); setError(false); }}
                   onKeyDown={(e) => e.key === "Enter" && submit()}
                   placeholder="••••••••"
-                  className="w-full bg-[#050510] text-[#4f8ef7] px-3 py-3 text-[10px] outline-none placeholder-[#1a2a5e]"
-                  style={{
-                    fontFamily: "'Press Start 2P', monospace",
-                    caretColor: "#4f8ef7",
-                    textShadow: "0 0 4px #4f8ef7",
-                  }}
+                  className={`login-input ${error ? "has-error" : "normal"}`}
+                />
+                <div
+                  className="login-input-accent"
+                  style={{ background: error ? "#e74c3c" : "#4f8ef7", opacity: error ? 1 : 0.8 }}
                 />
               </div>
+
+              {error && (
+                <div className="login-error">
+                  <span className="login-error-icon">⚠</span>
+                  <p className="login-error-text">INCORRECT PASSWORD</p>
+                </div>
+              )}
             </div>
 
-            {/* Glow effect */}
-            <div
-              className={`absolute inset-0 blur-md opacity-30 ${error ? "bg-red-500" : "bg-[#4f8ef7]"}`}
-            />
+            {/* Button */}
+            <button className="login-btn" onClick={submit}>
+              ▶ ENTER ROOM
+            </button>
           </div>
 
-          {/* Error message */}
-          {error && (
-            <p
-              className="text-red-400 text-[8px] text-center animate-pulse"
-              style={{
-                fontFamily: "'Press Start 2P', monospace",
-                textShadow: "0 0 4px red",
-              }}
-            >
-              ✕ ACCESS DENIED
-            </p>
-          )}
+          {/* Footer */}
+          <div className="login-footer">
+            <span className="login-footer-text">© DREAMSPACE v0.1</span>
+          </div>
+
         </div>
-
-        <button
-          onClick={submit}
-          className="relative bg-[#4f8ef7] text-[#0a0a1a] text-[10px] py-3 px-4 border-2 border-[#88ccff] active:translate-y-1 transition-transform w-full"
-          style={{
-            fontFamily: "'Press Start 2P', monospace",
-            boxShadow: "0 4px 0 #1a2a6e",
-          }}
-        >
-          ▶ ENTER ROOM
-        </button>
-
-        <p
-          className="text-[#2a3a6e] text-[7px] text-center"
-          style={{ fontFamily: "'Press Start 2P', monospace" }}
-        >
-          © DREAMSPACE v0.1
-        </p>
       </div>
-    </div>
+    </>
   );
 }
