@@ -6,10 +6,11 @@ const PORT = parseInt(process.env.PORT || '3001', 10);
 const httpServer = createServer((req, res) => {
   // Health check for Railway
   if (req.url === '/health') {
-    res.writeHead(200);
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('ok');
     return;
   }
+  // Let Socket.IO handle /socket.io/* — fall through to 404 for everything else
   res.writeHead(404);
   res.end();
 });

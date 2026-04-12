@@ -10,12 +10,11 @@ interface PlayerState {
 export function initSocket(httpServer: HttpServer) {
   const allowedOrigin = process.env.FRONTEND_URL || '*';
   const io = new SocketIOServer(httpServer, {
-    path: '/socket.io',
     cors: {
       origin: allowedOrigin,
       methods: ['GET', 'POST'],
     },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
   });
 
   // socketId -> last known state

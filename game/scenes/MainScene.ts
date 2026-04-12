@@ -110,7 +110,6 @@ export default class MainScene extends Phaser.Scene {
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
     console.log('[socket] connecting to:', socketUrl);
     this.socket = io(socketUrl, {
-      path: '/socket.io',
       transports: ['polling', 'websocket'],
     });
 
