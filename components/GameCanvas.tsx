@@ -51,12 +51,9 @@ export default function GameCanvas() {
   }, [chatOpen, ratOpen]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ position: "relative", height: "100vh", backgroundColor: "#1a1a2e", overflow: "hidden" }}
-    >
+    <div ref={containerRef} className="w-full h-screen flex justify-center items-center bg-[#1a1a2e]">
       {/* Game always fills full screen */}
-      <div ref={gameRef} style={{ width: "100%", height: "100%" }} />
+      <div ref={gameRef} className="w-full h-full" />
 
       {/* Rat dialog bubble */}
       <AnimatePresence>
@@ -67,35 +64,14 @@ export default function GameCanvas() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "center",
-              paddingBottom: "24px",
-              pointerEvents: "all",
-            }}
+            className="absolute inset-0 flex items-end justify-center pb-6 pointer-events-auto"
           >
-            <div style={{
-              backgroundColor: "#12122a",
-              border: "2px solid #f7a84f",
-              borderRadius: "12px",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
-              padding: "16px 20px",
-              maxWidth: "380px",
-              fontFamily: "monospace",
-              color: "#fff",
-              fontSize: "14px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}>
-              <div>🐀 <span style={{ color: "#f7a84f" }}>Rattatoiue</span></div>
+            <div className="bg-[#12122a] border-2 border-[#f7a84f] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] px-5 py-4 max-w-[380px] font-mono text-white text-sm flex flex-col gap-3">
+              <div>🐀 <span className="text-[#f7a84f]">Rattatoiue</span></div>
               <div>ขอโทษนะพอดียุ่งอยู่ หวังว่านายจะไม่เอาฉันไปทำแกงเขียวหวานนะ</div>
               <button
                 onClick={() => { setRatOpen(false); window.dispatchEvent(new CustomEvent("chat-closed")); }}
-                style={{ alignSelf: "flex-end", backgroundColor: "#f7a84f", border: "none", borderRadius: "6px", color: "#000", padding: "6px 16px", cursor: "pointer", fontFamily: "monospace", fontSize: "13px" }}
+                className="self-end bg-[#f7a84f] border-none rounded-md text-black px-4 py-1.5 cursor-pointer font-mono text-[13px] hover:bg-[#e69b46] transition-colors"
               >
                 โอเค...
               </button>
@@ -113,15 +89,7 @@ export default function GameCanvas() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "center",
-              paddingBottom: "24px",
-              pointerEvents: "all",
-            }}
+            className="absolute inset-0 flex items-end justify-center pb-6 pointer-events-auto"
           >
             <ChatPanel onClose={() => setChatOpen(false)} />
           </motion.div>

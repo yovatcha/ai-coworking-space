@@ -78,24 +78,21 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
   };
 
   return (
-    <div style={styles.panel}>
+    <div className="w-[420px] h-[320px] bg-[#12122a] border-2 border-[#4f8ef7] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] flex flex-col overflow-hidden">
       {/* Header */}
-      <div style={styles.header}>
-        <span>🗂️ Secretary {isTyping && <span style={{ color: "#88ccff", fontSize: "11px" }}>กำลังพิมพ์...</span>}</span>
-        <button onClick={onClose} style={styles.closeBtn}>✕</button>
+      <div className="flex justify-between items-center px-3 py-1.5 bg-[#1a1a3e] text-sm text-white font-mono">
+        <span>🗂️ Secretary {isTyping && <span className="text-[#88ccff] text-[11px]">กำลังพิมพ์...</span>}</span>
+        <button onClick={onClose} className="bg-transparent border-none text-[#aaa] cursor-pointer text-base hover:text-white transition-colors">✕</button>
       </div>
 
       {/* Messages */}
-      <div style={styles.messages}>
+      <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1.5">
         {messages.map((msg, i) => (
           <div
             key={i}
-            style={{
-              ...styles.bubble,
-              alignSelf: msg.from === "user" ? "flex-end" : "flex-start",
-              backgroundColor: msg.from === "user" ? "#4f8ef7" : "#2a2a3e",
-              color: "#fff",
-            }}
+            className={`max-w-[70%] px-2.5 py-1.5 rounded-[10px] text-[13px] font-mono break-words text-white ${
+              msg.from === "user" ? "self-end bg-[#4f8ef7]" : "self-start bg-[#2a2a3e]"
+            }`}
           >
             {msg.text}
           </div>
@@ -104,91 +101,25 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div style={styles.inputRow}>
+      <div className="flex px-2 py-1.5 gap-1.5 border-t border-[#2a2a4e]">
         <input
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKey}
           placeholder="Say something..."
-          style={styles.input}
+          className="flex-1 bg-[#1e1e3a] border border-[#4f8ef7] rounded-md text-white px-2.5 py-1.5 text-[13px] font-mono outline-none"
         />
-        <button onClick={send} disabled={isTyping} style={{ ...styles.sendBtn, opacity: isTyping ? 0.5 : 1 }}>Send</button>
+        <button 
+          onClick={send} 
+          disabled={isTyping} 
+          className={`bg-[#4f8ef7] border-none rounded-md text-white px-3.5 py-1.5 cursor-pointer font-mono text-[13px] hover:bg-[#3d7be3] transition-colors ${
+            isTyping ? "opacity-50 cursor-not-allowed" : "opacity-100"
+          }`}
+        >
+          Send
+        </button>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  panel: {
-    width: "420px",
-    height: "320px",
-    backgroundColor: "#12122a",
-    border: "2px solid #4f8ef7",
-    borderRadius: "12px",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "6px 12px",
-    backgroundColor: "#1a1a3e",
-    fontSize: "14px",
-    color: "#fff",
-    fontFamily: "monospace",
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    color: "#aaa",
-    cursor: "pointer",
-    fontSize: "16px",
-  },
-  messages: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "8px 12px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-  bubble: {
-    maxWidth: "70%",
-    padding: "6px 10px",
-    borderRadius: "10px",
-    fontSize: "13px",
-    fontFamily: "monospace",
-    wordBreak: "break-word",
-  },
-  inputRow: {
-    display: "flex",
-    padding: "6px 8px",
-    gap: "6px",
-    borderTop: "1px solid #2a2a4e",
-  },
-  input: {
-    flex: 1,
-    backgroundColor: "#1e1e3a",
-    border: "1px solid #4f8ef7",
-    borderRadius: "6px",
-    color: "#fff",
-    padding: "6px 10px",
-    fontSize: "13px",
-    fontFamily: "monospace",
-    outline: "none",
-  },
-  sendBtn: {
-    backgroundColor: "#4f8ef7",
-    border: "none",
-    borderRadius: "6px",
-    color: "#fff",
-    padding: "6px 14px",
-    cursor: "pointer",
-    fontFamily: "monospace",
-    fontSize: "13px",
-  },
-};
