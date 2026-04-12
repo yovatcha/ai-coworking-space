@@ -12,11 +12,19 @@ export default function GameCanvas() {
   const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !gameRef.current || phaserGameRef.current) return;
-    phaserGameRef.current = new Phaser.Game(getGameConfig(gameRef.current));
+    if (typeof window === "undefined" || !gameRef.current) return;
+    // Small delay ensures the DOM element is fully ready before Phaser attaches
+    const id = setTimeout(() => {
+      if (!phaserGameRef.current && gameRef.current) {
+        phaserGameRef.current = new Phaser.Game(getGameConfig(gameRef.current));
+      }
+    }, 0);
     return () => {
-      phaserGameRef.current?.destroy(true);
+      clearTimeout(id);
+      // Delay destroy so any in-flight Phaser ticks finish first
+      const game = phaserGameRef.current;
       phaserGameRef.current = null;
+      setTimeout(() => game?.destroy(true), 100);
     };
   }, []);
 
