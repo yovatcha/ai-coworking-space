@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import Player from '../entities/Player';
 import RemotePlayer from '../entities/RemotePlayer';
 import NPC from '../entities/NPC';
+import Rat from '../entities/Rat';
 
 // bg.png is 2752x1536 — displayed at 75% size for a medium room
 export const BG_WIDTH = 2064;
@@ -13,6 +14,7 @@ export default class MainScene extends Phaser.Scene {
   private socket!: Socket;
   private remotePlayers: Map<string, RemotePlayer> = new Map();
   private npc!: NPC;
+  private rat!: Rat;
   private keyE!: Phaser.Input.Keyboard.Key;
 
   // Throttle how often we emit position (ms)
@@ -52,6 +54,24 @@ export default class MainScene extends Phaser.Scene {
     this.load.image('arrowup2', '/assets/main-charactor/arrowup2.png');
     this.load.image('arrowup3', '/assets/main-charactor/arrowup3.png');
     this.load.image('arrowup4', '/assets/main-charactor/arrowup4.png');
+
+    this.load.image('rat-front', '/assets/rattatoiue/front1.png');
+    this.load.image('rat-down1', '/assets/rattatoiue/arrowdown1.png');
+    this.load.image('rat-down2', '/assets/rattatoiue/arrowdown2.png');
+    this.load.image('rat-down3', '/assets/rattatoiue/arrowdown3.png');
+    this.load.image('rat-down4', '/assets/rattatoiue/arrowdown4.png');
+    this.load.image('rat-right1', '/assets/rattatoiue/arrowright1.png');
+    this.load.image('rat-right2', '/assets/rattatoiue/arrowright2.png');
+    this.load.image('rat-right3', '/assets/rattatoiue/arrowright3.png');
+    this.load.image('rat-right4', '/assets/rattatoiue/arrowright4.png');
+    this.load.image('rat-left1', '/assets/rattatoiue/arrowleft1.png');
+    this.load.image('rat-left2', '/assets/rattatoiue/arrowleft2.png');
+    this.load.image('rat-left3', '/assets/rattatoiue/arrowleft3.png');
+    this.load.image('rat-left4', '/assets/rattatoiue/arrowleft4.png');
+    this.load.image('rat-up1', '/assets/rattatoiue/arrowup1.png');
+    this.load.image('rat-up2', '/assets/rattatoiue/arrowup2.png');
+    this.load.image('rat-up3', '/assets/rattatoiue/arrowup3.png');
+    this.load.image('rat-up4', '/assets/rattatoiue/arrowup4.png');
   }
 
   create() {
@@ -100,6 +120,19 @@ export default class MainScene extends Phaser.Scene {
 
     // NPC — near top-left of the room
     this.npc = new NPC(this, 180, 160);
+
+    // Rat animations
+    this.anims.create({ key: 'rat-idle', frames: [{ key: 'rat-front' }], frameRate: 1 });
+    this.anims.create({ key: 'rat-walk-down',  frames: [{ key: 'rat-down1' }, { key: 'rat-down2' }, { key: 'rat-down3' }, { key: 'rat-down4' }],  frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'rat-walk-right', frames: [{ key: 'rat-right1' }, { key: 'rat-right2' }, { key: 'rat-right3' }, { key: 'rat-right4' }], frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'rat-walk-left',  frames: [{ key: 'rat-left1' }, { key: 'rat-left2' }, { key: 'rat-left3' }, { key: 'rat-left4' }],  frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'rat-walk-up',    frames: [{ key: 'rat-up1' }, { key: 'rat-up2' }, { key: 'rat-up3' }, { key: 'rat-up4' }],    frameRate: 8, repeat: -1 });
+
+    // Rat — wanders around the room
+    this.rat = new Rat(this, BG_WIDTH / 2 + 200, BG_HEIGHT / 2 + 100);
+
+    // Resume rat walking when chat closes
+    window.addEventListener('chat-closed', () => this.rat.stopInteracting());
 
     // E key for interaction
     this.keyE = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E, false); // false = don't capture
@@ -182,6 +215,14 @@ export default class MainScene extends Phaser.Scene {
     if (near && Phaser.Input.Keyboard.JustDown(this.keyE)) {
       this.npc.interact();
     }
+
+    // Rat proximity + interaction
+    const nearRat = this.rat.updateProximity(this.player.x, this.player.y);
+    if (nearRat && Phaser.Input.Keyboard.JustDown(this.keyE)) {
+      this.rat.interact();
+    }
+
+    this.rat.update(delta);
 
     // Throttled position emit
     if (time - this.lastEmit > this.EMIT_INTERVAL) {

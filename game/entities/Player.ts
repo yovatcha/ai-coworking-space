@@ -30,6 +30,7 @@ export default class Player extends Phaser.GameObjects.Sprite {
   }
 
   update(time: number, delta: number) {
+    if (!this.scene?.sys?.isActive()) return;
     const deltaSec = delta / 1000;
     let dx = 0;
     let dy = 0;
@@ -47,22 +48,24 @@ export default class Player extends Phaser.GameObjects.Sprite {
     }
 
     // Animation
-    if (dx < 0) {
-      this.anims.play('walk-left', true);
-      this.currentAnim = 'walk-left';
-    } else if (dx > 0) {
-      this.anims.play('walk-right', true);
-      this.currentAnim = 'walk-right';
-    } else if (dy < 0) {
-      this.anims.play('walk-up', true);
-      this.currentAnim = 'walk-up';
-    } else if (dy > 0) {
-      this.anims.play('walk-down', true);
-      this.currentAnim = 'walk-down';
-    } else {
-      this.anims.play('idle', true);
-      this.currentAnim = 'idle';
-    }
+    try {
+      if (dx < 0) {
+        if (this.scene.anims.exists('walk-left')) this.anims.play('walk-left', true);
+        this.currentAnim = 'walk-left';
+      } else if (dx > 0) {
+        if (this.scene.anims.exists('walk-right')) this.anims.play('walk-right', true);
+        this.currentAnim = 'walk-right';
+      } else if (dy < 0) {
+        if (this.scene.anims.exists('walk-up')) this.anims.play('walk-up', true);
+        this.currentAnim = 'walk-up';
+      } else if (dy > 0) {
+        if (this.scene.anims.exists('walk-down')) this.anims.play('walk-down', true);
+        this.currentAnim = 'walk-down';
+      } else {
+        if (this.scene.anims.exists('idle')) this.anims.play('idle', true);
+        this.currentAnim = 'idle';
+      }
+    } catch { /* scene tearing down */ }
 
     // Move and clamp to bg bounds
     this.x = Phaser.Math.Clamp(
