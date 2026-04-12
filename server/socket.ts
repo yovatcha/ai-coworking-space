@@ -9,12 +9,24 @@ interface PlayerState {
 
 export function initSocket(httpServer: HttpServer) {
   const allowedOrigin = process.env.FRONTEND_URL || '*';
-  const io = new SocketIOServer(httpServer, {
-    cors: {
-      origin: allowedOrigin,
-      methods: ['GET', 'POST'],
-    },
-    transports: ['polling', 'websocket'],
+  console.log(`[socket] Initializing Socket.IO (CORS origin: ${allowedOrigin})`);
+
+  let io: SocketIOServer;
+  try {
+    io = new SocketIOServer(httpServer, {
+      cors: {
+        origin: allowedOrigin,
+        methods: ['GET', 'POST'],
+      },
+      transports: ['polling', 'websocket'],
+    });
+  } catch (err) {
+    console.error('[socket] Failed to initialize Socket.IO server:', err);
+    throw err;
+  }
+
+  io.engine.on('connection_error', (err) => {
+    console.error('[socket] Engine connection error:', err.req?.url, err.code, err.message, err.context);
   });
 
   // socketId -> last known state
