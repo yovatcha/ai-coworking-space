@@ -19,6 +19,9 @@ export const getGameConfig = (parent: string | HTMLElement): Phaser.Types.Core.G
     audio: {
       noAudio: true,
     },
+    input: {
+      keyboard: { capture: [] },
+    },
     backgroundColor: '#1a1a2e',
   };
 };

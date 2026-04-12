@@ -18,6 +18,7 @@ export default class MainScene extends Phaser.Scene {
   // Throttle how often we emit position (ms)
   private lastEmit = 0;
   private readonly EMIT_INTERVAL = 50; // ~20 updates/sec
+  private chatOpen = false;
 
   constructor() {
     super({ key: 'MainScene' });
@@ -101,10 +102,13 @@ export default class MainScene extends Phaser.Scene {
     this.npc = new NPC(this, 180, 160);
 
     // E key for interaction
-    this.keyE = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.keyE = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E, false); // false = don't capture
 
     // Setup socket after all anims are registered
     this.time.delayedCall(0, () => this.setupSocket());
+
+    window.addEventListener('chat-opened', () => { this.chatOpen = true; });
+    window.addEventListener('chat-closed', () => { this.chatOpen = false; });
   }
 
   private setupSocket() {
@@ -171,7 +175,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number) {
-    this.player.update(time, delta);
+    if (!this.chatOpen) this.player.update(time, delta);
 
     // NPC proximity + interaction
     const near = this.npc.updateProximity(this.player.x, this.player.y);

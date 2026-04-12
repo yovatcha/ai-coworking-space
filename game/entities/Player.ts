@@ -17,8 +17,15 @@ export default class Player extends Phaser.GameObjects.Sprite {
     this.setScale(0.18);
 
     if (scene.input.keyboard) {
-      this.cursors = scene.input.keyboard.createCursorKeys();
-      this.wasd = scene.input.keyboard.addKeys('W,A,S,D');
+      this.cursors = scene.input.keyboard.addKeys({
+        up: Phaser.Input.Keyboard.KeyCodes.UP,
+        down: Phaser.Input.Keyboard.KeyCodes.DOWN,
+        left: Phaser.Input.Keyboard.KeyCodes.LEFT,
+        right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
+        space: Phaser.Input.Keyboard.KeyCodes.SPACE,
+        shift: Phaser.Input.Keyboard.KeyCodes.SHIFT,
+      }, false) as Phaser.Types.Input.Keyboard.CursorKeys;
+      this.wasd = scene.input.keyboard.addKeys('W,A,S,D', false);
     }
   }
 

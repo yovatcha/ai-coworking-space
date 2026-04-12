@@ -26,6 +26,16 @@ export default function GameCanvas() {
     return () => window.removeEventListener("npc-chat", open);
   }, []);
 
+  // Notify Phaser scene when chat opens/closes so movement stops while typing
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(chatOpen ? "chat-opened" : "chat-closed"));
+
+    if (chatOpen) {
+      // Blur every focusable element inside the game canvas to release keyboard
+      gameRef.current?.querySelectorAll<HTMLElement>("canvas, *[tabindex]").forEach(el => el.blur());
+    }
+  }, [chatOpen]);
+
   return (
     <div
       ref={containerRef}
