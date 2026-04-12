@@ -44,14 +44,21 @@ export default function GameCanvas() {
 
   // Notify Phaser scene when chat opens/closes so movement stops while typing
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent(chatOpen || ratOpen ? "chat-opened" : "chat-closed"));
+    window.dispatchEvent(
+      new CustomEvent(chatOpen || ratOpen ? "chat-opened" : "chat-closed"),
+    );
     if (chatOpen || ratOpen) {
-      gameRef.current?.querySelectorAll<HTMLElement>("canvas, *[tabindex]").forEach(el => el.blur());
+      gameRef.current
+        ?.querySelectorAll<HTMLElement>("canvas, *[tabindex]")
+        .forEach((el) => el.blur());
     }
   }, [chatOpen, ratOpen]);
 
   return (
-    <div ref={containerRef} className="w-full h-screen flex justify-center items-center bg-[#1a1a2e]">
+    <div
+      ref={containerRef}
+      className="w-full h-screen flex justify-center items-center bg-[#1a1a2e]"
+    >
       {/* Game always fills full screen */}
       <div ref={gameRef} className="w-full h-full" />
 
@@ -60,21 +67,219 @@ export default function GameCanvas() {
         {ratOpen && (
           <motion.div
             key="rat"
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            initial={{ opacity: 0, y: 40, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="absolute inset-0 flex items-end justify-center pb-6 pointer-events-auto"
+            exit={{ opacity: 0, y: 20, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 pointer-events-auto z-50"
+            style={{ width: "min(360px, 100vw - 2rem)" }}
           >
-            <div className="bg-[#12122a] border-2 border-[#f7a84f] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] px-5 py-4 max-w-[380px] font-mono text-white text-sm flex flex-col gap-3">
-              <div>🐀 <span className="text-[#f7a84f]">Rattatoiue</span></div>
-              <div>ขอโทษนะพอดียุ่งอยู่ หวังว่านายจะไม่เอาฉันไปทำแกงเขียวหวานนะ</div>
-              <button
-                onClick={() => { setRatOpen(false); window.dispatchEvent(new CustomEvent("chat-closed")); }}
-                className="self-end bg-[#f7a84f] border-none rounded-md text-black px-4 py-1.5 cursor-pointer font-mono text-[13px] hover:bg-[#e69b46] transition-colors"
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                background: "#1a1c2c",
+                fontFamily: "'Press Start 2P', monospace",
+                border: "4px solid #5a6988",
+                boxShadow:
+                  "-4px -4px 0 0 #8faabb, 4px 4px 0 0 #0d0f1a, 6px 6px 0 0 #000",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {/* scanlines */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  pointerEvents: "none",
+                  zIndex: 10,
+                  background:
+                    "repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.10) 3px,rgba(0,0,0,0.10) 4px)",
+                }}
+              />
+
+              {/* title bar */}
+              <div
+                style={{
+                  background: "#2a1a00",
+                  borderBottom: "4px solid #0d0f1a",
+                  padding: "8px 10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
               >
-                โอเค...
-              </button>
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    background: "#3d2200",
+                    border: "3px solid #f7a84f",
+                    boxShadow: "2px 2px 0 #000, -1px -1px 0 #ffcc88",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 14,
+                    flexShrink: 0,
+                  }}
+                >
+                  🐀
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 9,
+                      color: "#f7d794",
+                      textShadow: "2px 2px 0 #000",
+                    }}
+                  >
+                    RATTATOIUE
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 6,
+                      color: "#f7a84f",
+                      textShadow: "1px 1px 0 #000",
+                    }}
+                  >
+                    INCOMING MESSAGE
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 6,
+                    color: "#5a6988",
+                    textShadow: "1px 1px 0 #000",
+                  }}
+                >
+                  NOW
+                </span>
+              </div>
+
+              {/* message body */}
+              <div
+                style={{
+                  padding: "14px 12px",
+                  background: "#1a1c2c",
+                  backgroundImage:
+                    "radial-gradient(circle, #2a2d3e 1px, transparent 1px)",
+                  backgroundSize: "12px 12px",
+                  position: "relative",
+                }}
+              >
+                {/* pixel speaker nub */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: -1,
+                    left: 18,
+                    width: 12,
+                    height: 4,
+                    background: "#f7a84f",
+                  }}
+                />
+                <p
+                  style={{
+                    fontFamily: "'Sarabun', sans-serif",
+                    fontSize: 16,
+                    fontWeight: 400,
+                    lineHeight: 1.6,
+                    color: "#e6d4aa",
+                    textShadow: "1px 1px 0 #000",
+                    margin: 0,
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  ขอโทษนะ พอดียุ่งอยู่ หวังว่านายจะไม่เอาฉันไปทำแกงเขียวหวานนะ
+                </p>
+              </div>
+
+              {/* pixel divider */}
+              <div style={{ height: 4, background: "#0d0f1a" }} />
+              <div style={{ height: 3, background: "#2a3a6a" }} />
+              <div style={{ height: 4, background: "#0d0f1a" }} />
+
+              {/* actions */}
+              <div
+                style={{
+                  padding: "10px 12px",
+                  background: "#2a1a00",
+                  borderTop: "4px solid #0d0f1a",
+                  display: "flex",
+                  gap: 8,
+                }}
+              >
+                {[
+                  {
+                    label: "OK",
+                    primary: true,
+                    action: () => {
+                      setRatOpen(false);
+                      window.dispatchEvent(new CustomEvent("chat-closed"));
+                    },
+                  },
+                  {
+                    label: "IGNORE",
+                    primary: false,
+                    action: () => setRatOpen(false),
+                  },
+                ].map(({ label, primary, action }) => (
+                  <button
+                    key={label}
+                    onClick={action}
+                    style={{
+                      flex: 1,
+                      padding: "9px 0",
+                      fontFamily: "'Press Start 2P', monospace",
+                      fontSize: 8,
+                      letterSpacing: "0.05em",
+                      background: primary ? "#f7a84f" : "#1a1c2c",
+                      color: primary ? "#0a0a1a" : "#f7a84f",
+                      border: `3px solid ${primary ? "#ffcc88" : "#5a4020"}`,
+                      boxShadow: primary
+                        ? "3px 3px 0 #000, -1px -1px 0 #ffcc88"
+                        : "3px 3px 0 #000, -1px -1px 0 #3a2a10",
+                      cursor: "pointer",
+                    }}
+                    onMouseOver={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.transform =
+                        "translate(1px,1px)";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                        "2px 2px 0 #000";
+                    }}
+                    onMouseOut={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.transform =
+                        "";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                        primary
+                          ? "3px 3px 0 #000, -1px -1px 0 #ffcc88"
+                          : "3px 3px 0 #000, -1px -1px 0 #3a2a10";
+                    }}
+                    onMouseDown={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.transform =
+                        "translate(2px,2px)";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                        "none";
+                    }}
+                    onMouseUp={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.transform =
+                        "translate(1px,1px)";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                        "1px 1px 0 #000";
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
@@ -85,11 +290,16 @@ export default function GameCanvas() {
         {chatOpen && (
           <motion.div
             key="chat"
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="absolute inset-0 flex items-end justify-center pb-6 pointer-events-auto"
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{
+              type: "spring",
+              stiffness: 340,
+              damping: 30,
+              mass: 0.8,
+            }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-50"
           >
             <ChatPanel onClose={() => setChatOpen(false)} />
           </motion.div>

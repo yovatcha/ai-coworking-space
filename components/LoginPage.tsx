@@ -46,97 +46,104 @@ export default function LoginPage({ onSuccess }: { onSuccess: () => void }) {
 
       {/* Login box */}
       <div
-        className="relative z-20 flex flex-col gap-4 p-8 w-[340px] bg-[#0a0a1a] border-4 border-[#4f8ef7]"
+        className="relative z-20 flex flex-col gap-5 p-6 w-[340px]
+             bg-[#0b0f1a]/90 backdrop-blur-md
+             border border-[#2a3a6a]
+             rounded-2xl"
         style={{
-          imageRendering: "pixelated",
-          boxShadow: "6px 6px 0px #1a2a6e, inset 0 0 0 2px #0a0a1a",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.6)",
         }}
       >
-        {/* Corner pixels */}
-        <div className="absolute top-0 left-0 w-2 h-2 bg-[#4f8ef7]" />
-        <div className="absolute top-0 right-0 w-2 h-2 bg-[#4f8ef7]" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 bg-[#4f8ef7]" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 bg-[#4f8ef7]" />
+        {/* subtle glow border */}
+        <div className="absolute inset-0 rounded-2xl ring-1 ring-[#4f8ef7]/20 pointer-events-none" />
 
         <img
           src="/assets/dreamspace-banner.png"
           alt="Dream Space"
-          className="w-full max-h-[200px] object-contain"
+          className="w-full max-h-[160px] object-contain opacity-90"
           style={{ imageRendering: "pixelated" }}
         />
 
-        {/* Pixel divider */}
-        <div className="flex gap-1 justify-center">
-          {Array.from({ length: 16 }).map((_, i) => (
-            <div key={i} className="w-2 h-1 bg-[#4f8ef7] opacity-60" />
-          ))}
-        </div>
+        {/* modern divider */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-[#4f8ef7]/40 to-transparent" />
 
         <p
-          className="text-[#88aaff] text-[9px] p-8 text-center tracking-widest uppercase"
+          className="text-[#88aaff] text-[10px] text-center tracking-widest uppercase"
           style={{ fontFamily: "'Press Start 2P', monospace" }}
         >
           Enter Password
         </p>
 
-        <div className="flex flex-col gap-2 items-center">
-          <div className="relative w-full">
-            {/* Outer pixel frame */}
-            <div className={`p-[3px] ${error ? "bg-red-500" : "bg-[#4f8ef7]"}`}>
-              <div className="bg-[#050510] p-[2px]">
-                <input
-                  autoFocus
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setError(false);
-                  }}
-                  onKeyDown={(e) => e.key === "Enter" && submit()}
-                  placeholder="••••••••"
-                  className="w-full bg-[#050510] text-[#4f8ef7] px-3 py-3 text-[10px] outline-none placeholder-[#1a2a5e]"
-                  style={{
-                    fontFamily: "'Press Start 2P', monospace",
-                    caretColor: "#4f8ef7",
-                    textShadow: "0 0 4px #4f8ef7",
-                  }}
-                />
-              </div>
-            </div>
+        {/* INPUT */}
+        <div className="flex flex-col gap-2">
+          <div className="relative">
+            <input
+              autoFocus
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(false);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="••••••••"
+              className={`
+          w-full px-4 py-3 text-sm
+          bg-[#050510] text-[#e6ecff]
+          rounded-lg border
+          outline-none transition-all duration-200
+          placeholder:text-[#2a3a6e]
+          ${
+            error
+              ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
+              : "border-[#2a3a6a] focus:border-[#4f8ef7] focus:ring-2 focus:ring-[#4f8ef7]/30"
+          }
+        `}
+              style={{
+                fontFamily: "'Press Start 2P', monospace",
+                letterSpacing: "0.05em",
+              }}
+            />
 
-            {/* Glow effect */}
+            {/* tiny pixel accent */}
             <div
-              className={`absolute inset-0 blur-md opacity-30 ${error ? "bg-red-500" : "bg-[#4f8ef7]"}`}
+              className={`absolute top-0 left-0 h-[2px] w-full rounded-t-lg
+        ${error ? "bg-red-500" : "bg-[#4f8ef7]"} opacity-70`}
             />
           </div>
 
-          {/* Error message */}
           {error && (
             <p
-              className="text-red-400 text-[8px] text-center animate-pulse"
-              style={{
-                fontFamily: "'Press Start 2P', monospace",
-                textShadow: "0 0 4px red",
-              }}
+              className="text-red-400 text-[9px] text-center"
+              style={{ fontFamily: "'Press Start 2P', monospace" }}
             >
-              ✕ ACCESS DENIED
+              Incorrect password
             </p>
           )}
         </div>
 
+        {/* BUTTON */}
         <button
           onClick={submit}
-          className="relative bg-[#4f8ef7] text-[#0a0a1a] text-[10px] py-3 px-4 border-2 border-[#88ccff] active:translate-y-1 transition-transform w-full"
+          className="
+      w-full py-3 text-[11px]
+      rounded-lg
+      bg-gradient-to-b from-[#5fa0ff] to-[#4f8ef7]
+      text-[#0a0a1a]
+      border border-[#88ccff]/40
+      transition-all duration-150
+      hover:brightness-110
+      active:scale-[0.98]
+    "
           style={{
             fontFamily: "'Press Start 2P', monospace",
-            boxShadow: "0 4px 0 #1a2a6e",
           }}
         >
-          ▶ ENTER ROOM
+          ENTER ROOM
         </button>
 
         <p
-          className="text-[#2a3a6e] text-[7px] text-center"
+          className="text-[#2a3a6e] text-[8px] text-center"
           style={{ fontFamily: "'Press Start 2P', monospace" }}
         >
           © DREAMSPACE v0.1
