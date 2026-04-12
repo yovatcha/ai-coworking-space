@@ -16,6 +16,6 @@ const httpServer = createServer((req, res) => {
 
 initSocket(httpServer);
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`[server] Socket.IO listening on port ${PORT}`);
 });

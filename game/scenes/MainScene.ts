@@ -109,7 +109,10 @@ export default class MainScene extends Phaser.Scene {
     // NEXT_PUBLIC_* vars are inlined at build time by Next.js
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
     console.log('[socket] connecting to:', socketUrl);
-    this.socket = io(socketUrl, { transports: ['websocket', 'polling'] });
+    this.socket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['polling', 'websocket'],
+    });
 
     this.socket.on('connect', () => {
       console.log('[socket] connected as', this.socket.id);
