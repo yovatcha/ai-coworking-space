@@ -106,8 +106,9 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private setupSocket() {
-    // In production, point to the Railway backend; locally fall back to same origin
+    // NEXT_PUBLIC_* vars are inlined at build time by Next.js
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
+    console.log('[socket] connecting to:', socketUrl);
     this.socket = io(socketUrl, { transports: ['websocket', 'polling'] });
 
     this.socket.on('connect', () => {
