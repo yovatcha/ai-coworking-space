@@ -55,8 +55,10 @@ export default class MainScene extends Phaser.Scene {
 
   create() {
     this.add.image(BG_WIDTH / 2, BG_HEIGHT / 2, 'bg').setScale(0.75);
+
+    // Camera bounds match the visible bg area; zoom 1 so the world fills the screen
     this.cameras.main.setBounds(0, 0, BG_WIDTH, BG_HEIGHT);
-    this.cameras.main.setZoom(0.75);
+    this.cameras.main.setZoom(1);
 
     // Animations
     this.anims.create({

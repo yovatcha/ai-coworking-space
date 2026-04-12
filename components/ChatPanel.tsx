@@ -83,12 +83,15 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
-    width: "100%",
-    height: "220px",
+    width: "420px",
+    height: "320px",
     backgroundColor: "#12122a",
-    borderTop: "2px solid #4f8ef7",
+    border: "2px solid #4f8ef7",
+    borderRadius: "12px",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
     display: "flex",
     flexDirection: "column",
+    overflow: "hidden",
   },
   header: {
     display: "flex",

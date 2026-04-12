@@ -1,12 +1,9 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Phaser from "phaser";
 import { getGameConfig } from "@/game/config";
 import ChatPanel from "./ChatPanel";
-
-const CHAT_HEIGHT = 220;
-const TRANSITION_MS = 300;
 
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,14 +20,6 @@ export default function GameCanvas() {
     };
   }, []);
 
-  // Refresh Phaser after the CSS transition finishes
-  useEffect(() => {
-    const id = setTimeout(() => {
-      phaserGameRef.current?.scale.refresh();
-    }, TRANSITION_MS + 20);
-    return () => clearTimeout(id);
-  }, [chatOpen]);
-
   useEffect(() => {
     const open = () => setChatOpen(true);
     window.addEventListener("npc-chat", open);
@@ -40,29 +29,21 @@ export default function GameCanvas() {
   return (
     <div
       ref={containerRef}
-      style={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "#1a1a2e", overflow: "hidden" }}
+      style={{ position: "relative", height: "100vh", backgroundColor: "#1a1a2e", overflow: "hidden" }}
     >
-      {/* Game shrinks smoothly */}
-      <div
-        ref={gameRef}
-        style={{
-          width: "100%",
-          flex: "none",
-          height: chatOpen ? `calc(100vh - ${CHAT_HEIGHT}px)` : "100vh",
-          transition: `height ${TRANSITION_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-          overflow: "hidden",
-        }}
-      />
+      {/* Game always fills full screen */}
+      <div ref={gameRef} style={{ width: "100%", height: "100%" }} />
 
-      {/* Chat panel slides up from bottom — always mounted, height animates */}
-      <div
-        style={{
-          height: chatOpen ? `${CHAT_HEIGHT}px` : "0px",
-          overflow: "hidden",
-          transition: `height ${TRANSITION_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-          flexShrink: 0,
-        }}
-      >
+      {/* Chat popup — centered overlay, always mounted to avoid Phaser destroy */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        display: chatOpen ? "flex" : "none",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        paddingBottom: "24px",
+        pointerEvents: chatOpen ? "all" : "none",
+      }}>
         <ChatPanel onClose={() => setChatOpen(false)} />
       </div>
     </div>
