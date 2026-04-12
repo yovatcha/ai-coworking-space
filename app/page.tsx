@@ -7,7 +7,7 @@ import LoginPage, { isAuthenticated } from "@/components/LoginPage";
 const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
   ssr: false,
   loading: () => (
-    <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#1a1a2e", color: "white" }}>
+    <div className="h-screen flex items-center justify-center bg-[#1a1a2e] text-white">
       Loading game engine...
     </div>
   ),
