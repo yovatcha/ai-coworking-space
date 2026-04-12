@@ -13,37 +13,75 @@ interface ChatPanelProps {
 
 export default function ChatPanel({ onClose }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { from: "npc", text: "QUACK?" },
+    { from: "npc", text: "สวัสดีค่ะ ฉันคือ Secretary มีอะไรให้ช่วยไหม?" },
   ]);
   const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
 
   // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = () => {
+  const send = async () => {
     const text = input.trim();
     if (!text) return;
-    setMessages((prev) => [...prev, { from: "user", text }]);
+
+    const userMsg: Message = { from: "user", text };
+    const nextMessages = [...messages, userMsg];
+    setMessages(nextMessages);
     setInput("");
 
-    // Duck always replies QUACK for now — swap with AI call later
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { from: "npc", text: "QUACK!" }]);
-    }, 500);
+    // Build message history for API
+    const apiMessages = nextMessages.map((m) => ({
+      role: m.from === "user" ? "user" : "assistant",
+      content: m.text,
+    }));
+
+    // Stream response from secretary API
+    const res = await fetch("/api/secretary/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: apiMessages }),
+    });
+
+    if (!res.body) return;
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let npcText = "";
+
+    setIsTyping(true);
+    // Add empty NPC bubble first
+    setMessages((prev) => [...prev, { from: "npc", text: "" }]);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      npcText += decoder.decode(value, { stream: true });
+      // Update last NPC bubble with streaming text
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { from: "npc", text: npcText };
+        return updated;
+      });
+    }
+    setIsTyping(false);
   };
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") send();
+    if (e.key === "Escape") { setInput(""); onClose(); }
   };
 
   return (
     <div style={styles.panel}>
       {/* Header */}
       <div style={styles.header}>
-        <span>🦆 Duck</span>
+        <span>🗂️ Secretary {isTyping && <span style={{ color: "#88ccff", fontSize: "11px" }}>กำลังพิมพ์...</span>}</span>
         <button onClick={onClose} style={styles.closeBtn}>✕</button>
       </div>
 
@@ -68,14 +106,14 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
       {/* Input */}
       <div style={styles.inputRow}>
         <input
-          autoFocus
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKey}
           placeholder="Say something..."
           style={styles.input}
         />
-        <button onClick={send} style={styles.sendBtn}>Send</button>
+        <button onClick={send} disabled={isTyping} style={{ ...styles.sendBtn, opacity: isTyping ? 0.5 : 1 }}>Send</button>
       </div>
     </div>
   );
@@ -83,12 +121,15 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
-    width: "100%",
-    height: "220px",
+    width: "420px",
+    height: "320px",
     backgroundColor: "#12122a",
-    borderTop: "2px solid #4f8ef7",
+    border: "2px solid #4f8ef7",
+    borderRadius: "12px",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
     display: "flex",
     flexDirection: "column",
+    overflow: "hidden",
   },
   header: {
     display: "flex",

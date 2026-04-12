@@ -4,7 +4,8 @@ export default class RemotePlayer extends Phaser.GameObjects.Sprite {
   private nameLabel: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, x: number, y: number, id: string) {
-    super(scene, x, y, 'front1');
+    const textureKey = scene.textures.exists('front1') ? 'front1' : '__DEFAULT';
+    super(scene, x, y, textureKey);
     scene.add.existing(this);
     this.setScale(0.18);
     // Tint remote players so they're visually distinct

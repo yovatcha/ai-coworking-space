@@ -17,12 +17,20 @@ export default class Player extends Phaser.GameObjects.Sprite {
     this.setScale(0.18);
 
     if (scene.input.keyboard) {
-      this.cursors = scene.input.keyboard.createCursorKeys();
-      this.wasd = scene.input.keyboard.addKeys('W,A,S,D');
+      this.cursors = scene.input.keyboard.addKeys({
+        up: Phaser.Input.Keyboard.KeyCodes.UP,
+        down: Phaser.Input.Keyboard.KeyCodes.DOWN,
+        left: Phaser.Input.Keyboard.KeyCodes.LEFT,
+        right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
+        space: Phaser.Input.Keyboard.KeyCodes.SPACE,
+        shift: Phaser.Input.Keyboard.KeyCodes.SHIFT,
+      }, false) as Phaser.Types.Input.Keyboard.CursorKeys;
+      this.wasd = scene.input.keyboard.addKeys('W,A,S,D', false);
     }
   }
 
   update(time: number, delta: number) {
+    if (!this.scene?.sys?.isActive()) return;
     const deltaSec = delta / 1000;
     let dx = 0;
     let dy = 0;
@@ -40,22 +48,24 @@ export default class Player extends Phaser.GameObjects.Sprite {
     }
 
     // Animation
-    if (dx < 0) {
-      this.anims.play('walk-left', true);
-      this.currentAnim = 'walk-left';
-    } else if (dx > 0) {
-      this.anims.play('walk-right', true);
-      this.currentAnim = 'walk-right';
-    } else if (dy < 0) {
-      this.anims.play('walk-up', true);
-      this.currentAnim = 'walk-up';
-    } else if (dy > 0) {
-      this.anims.play('walk-down', true);
-      this.currentAnim = 'walk-down';
-    } else {
-      this.anims.play('idle', true);
-      this.currentAnim = 'idle';
-    }
+    try {
+      if (dx < 0) {
+        if (this.scene.anims.exists('walk-left')) this.anims.play('walk-left', true);
+        this.currentAnim = 'walk-left';
+      } else if (dx > 0) {
+        if (this.scene.anims.exists('walk-right')) this.anims.play('walk-right', true);
+        this.currentAnim = 'walk-right';
+      } else if (dy < 0) {
+        if (this.scene.anims.exists('walk-up')) this.anims.play('walk-up', true);
+        this.currentAnim = 'walk-up';
+      } else if (dy > 0) {
+        if (this.scene.anims.exists('walk-down')) this.anims.play('walk-down', true);
+        this.currentAnim = 'walk-down';
+      } else {
+        if (this.scene.anims.exists('idle')) this.anims.play('idle', true);
+        this.currentAnim = 'idle';
+      }
+    } catch { /* scene tearing down */ }
 
     // Move and clamp to bg bounds
     this.x = Phaser.Math.Clamp(
