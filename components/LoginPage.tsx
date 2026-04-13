@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-const CORRECT_PASSWORD = "1212312121";
 const SESSION_KEY = "cowork_auth";
 
 export function isAuthenticated() {
@@ -17,14 +16,29 @@ export function logout() {
 export default function LoginPage({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const submit = () => {
-    if (password === CORRECT_PASSWORD) {
-      localStorage.setItem(SESSION_KEY, "true");
-      onSuccess();
-    } else {
+  const submit = async () => {
+    if (!password || loading) return;
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        localStorage.setItem(SESSION_KEY, "true");
+        onSuccess();
+      } else {
+        setError(true);
+        setPassword("");
+      }
+    } catch {
       setError(true);
-      setPassword("");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -365,8 +379,8 @@ export default function LoginPage({ onSuccess }: { onSuccess: () => void }) {
             </div>
 
             {/* Button */}
-            <button className="login-btn" onClick={submit}>
-              ▶ ENTER ROOM
+            <button className="login-btn" onClick={submit} disabled={loading}>
+              {loading ? "▶ CHECKING..." : "▶ ENTER ROOM"}
             </button>
           </div>
 

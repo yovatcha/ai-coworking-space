@@ -5,6 +5,7 @@ import * as Phaser from "phaser";
 import { AnimatePresence, motion } from "framer-motion";
 import { getGameConfig } from "@/game/config";
 import ChatPanel from "./ChatPanel";
+import { logout } from "./LoginPage";
 
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -12,6 +13,7 @@ export default function GameCanvas() {
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [ratOpen, setRatOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !gameRef.current) return;
@@ -305,6 +307,68 @@ export default function GameCanvas() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Settings button */}
+      <div style={{ position: "absolute", top: 16, right: 16, zIndex: 100 }}>
+        <button
+          onClick={() => setSettingsOpen((v) => !v)}
+          style={{
+            width: 44,
+            height: 44,
+            background: "#16213e",
+            border: "3px solid #4f8ef7",
+            boxShadow: "3px 3px 0 #000, -1px -1px 0 #2a4a8a",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 8,
+          }}
+        >
+          <img src="/assets/icons/setting.svg" alt="Settings" style={{ width: 22, height: 22, imageRendering: "pixelated", filter: "invert(60%) sepia(80%) saturate(400%) hue-rotate(190deg)" }} />
+        </button>
+
+        <AnimatePresence>
+          {settingsOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.95 }}
+              transition={{ duration: 0.12 }}
+              style={{
+                position: "absolute",
+                top: 52,
+                right: 0,
+                background: "#16213e",
+                border: "3px solid #4f8ef7",
+                boxShadow: "3px 3px 0 #000, -1px -1px 0 #2a4a8a",
+                minWidth: 140,
+                overflow: "hidden",
+              }}
+            >
+              <button
+                onClick={() => { logout(); window.location.reload(); }}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  fontFamily: "'Press Start 2P', monospace",
+                  fontSize: 8,
+                  color: "#ff6b6b",
+                  background: "transparent",
+                  border: "none",
+                  borderBottom: "2px solid #0d0f1a",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  letterSpacing: "0.05em",
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.background = "#1a2a4a")}
+                onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                LOGOUT
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

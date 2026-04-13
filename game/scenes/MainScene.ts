@@ -30,6 +30,7 @@ export default class MainScene extends Phaser.Scene {
     this.load.image('bg', '/assets/bg.png');
     this.load.image('ped-stand1', '/assets/ped/stand1.png');
     this.load.image('ped-stand2', '/assets/ped/stand2.png');
+    this.load.image('working-desk', '/assets/furnitures/working-desk.png');
     this.load.image('front1', '/assets/main-charactor/front1.png');
 
     // down
@@ -117,6 +118,11 @@ export default class MainScene extends Phaser.Scene {
     // Center camera on the room before following the player
     this.cameras.main.centerOn(BG_WIDTH / 2, BG_HEIGHT / 2);
     this.cameras.main.startFollow(this.player, true);
+
+    // Working desk behind the secretary NPC
+    // NPC sprite is 1024px at scale 0.2 = ~205px wide
+    // Desk sprite is 2816px; scale 0.22 ≈ 620px wide (~3× char width)
+    this.add.image(180, 175, 'working-desk').setScale(0.07).setDepth(0);
 
     // NPC — near top-left of the room
     this.npc = new NPC(this, 180, 160);

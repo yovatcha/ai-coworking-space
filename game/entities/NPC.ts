@@ -8,7 +8,7 @@ export default class NPC extends Phaser.GameObjects.Sprite {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, 'ped-stand1');
     scene.add.existing(this);
-    this.setScale(0.2);
+    this.setScale(0.2).setDepth(1);
 
     this.hint = scene.add
       .text(x, y - 36, '[E] Talk', {
