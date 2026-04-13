@@ -8,7 +8,7 @@ export default class NPC extends Phaser.GameObjects.Sprite {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, 'ped-stand1');
     scene.add.existing(this);
-    this.setScale(0.2).setDepth(1);
+    this.setScale(0.2).setDepth(10);
 
     this.hint = scene.add
       .text(x, y - 36, '[E] Talk', {
@@ -17,8 +17,9 @@ export default class NPC extends Phaser.GameObjects.Sprite {
         backgroundColor: '#000000aa',
         padding: { x: 4, y: 2 },
       })
-      .setOrigin(0.5, 1)
-      .setVisible(false);
+      .setOrigin(0.4, 1)
+      .setVisible(false)
+      .setDepth(20);
 
     scene.anims.create({
       key: 'ped-idle',

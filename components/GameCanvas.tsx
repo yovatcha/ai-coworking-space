@@ -14,6 +14,7 @@ export default function GameCanvas() {
   const [chatOpen, setChatOpen] = useState(false);
   const [ratOpen, setRatOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [exitConfirm, setExitConfirm] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !gameRef.current) return;
@@ -42,6 +43,12 @@ export default function GameCanvas() {
     const open = () => setRatOpen(true);
     window.addEventListener("rat-chat", open);
     return () => window.removeEventListener("rat-chat", open);
+  }, []);
+
+  useEffect(() => {
+    const handle = () => { setExitConfirm(true); };
+    window.addEventListener("exit-door", handle);
+    return () => window.removeEventListener("exit-door", handle);
   }, []);
 
   // Notify Phaser scene when chat opens/closes so movement stops while typing
@@ -307,6 +314,82 @@ export default function GameCanvas() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Exit confirmation dialog */}
+      <AnimatePresence>
+        {exitConfirm && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.92 }}
+            transition={{ duration: 0.12 }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.55)",
+              zIndex: 200,
+            }}
+          >
+            <div
+              style={{
+                background: "#16213e",
+                border: "4px solid #4f8ef7",
+                boxShadow: "-4px -4px 0 0 #8faabb, 4px 4px 0 0 #0d0f1a, 6px 6px 0 0 #000",
+                fontFamily: "'Press Start 2P', monospace",
+                minWidth: 280,
+                overflow: "hidden",
+              }}
+            >
+              {/* title bar */}
+              <div style={{ background: "#0d0f1a", borderBottom: "4px solid #000", padding: "10px 14px" }}>
+                <span style={{ fontSize: 9, color: "#e8f4fd", textShadow: "2px 2px 0 #000", letterSpacing: "0.05em" }}>
+                  EXIT ROOM
+                </span>
+              </div>
+
+              {/* body */}
+              <div style={{ padding: "20px 16px", background: "#1a1c2c", backgroundImage: "radial-gradient(circle, #2a2d3e 1px, transparent 1px)", backgroundSize: "12px 12px" }}>
+                <p style={{ fontFamily: "'Sarabun', sans-serif", fontSize: 15, color: "#a8d8ea", margin: 0, lineHeight: 1.6 }}>
+                  Are you sure you want to leave?
+                </p>
+              </div>
+
+              {/* actions */}
+              <div style={{ display: "flex", gap: 8, padding: "10px 12px", background: "#0d0f1a", borderTop: "4px solid #000" }}>
+                {[
+                  { label: "LOGOUT", primary: true, action: () => { logout(); window.location.reload(); } },
+                  { label: "CANCEL", primary: false, action: () => setExitConfirm(false) },
+                ].map(({ label, primary, action }) => (
+                  <button
+                    key={label}
+                    onClick={action}
+                    style={{
+                      flex: 1,
+                      padding: "10px 0",
+                      fontFamily: "'Press Start 2P', monospace",
+                      fontSize: 8,
+                      letterSpacing: "0.05em",
+                      background: primary ? "#4f8ef7" : "#1a1c2c",
+                      color: primary ? "#000" : "#88aaff",
+                      border: `3px solid ${primary ? "#88aaff" : "#2a3a6a"}`,
+                      boxShadow: "3px 3px 0 #000",
+                      cursor: "pointer",
+                    }}
+                    onMouseOver={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "translate(1px,1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "2px 2px 0 #000"; }}
+                    onMouseOut={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "3px 3px 0 #000"; }}
+                    onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "translate(2px,2px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Settings button */}
       <div style={{ position: "absolute", top: 16, right: 16, zIndex: 100 }}>
         <button
@@ -346,7 +429,7 @@ export default function GameCanvas() {
               }}
             >
               <button
-                onClick={() => { logout(); window.location.reload(); }}
+                onClick={() => { setSettingsOpen(false); setExitConfirm(true); }}
                 style={{
                   width: "100%",
                   padding: "10px 14px",
