@@ -16,6 +16,12 @@ export default class MainScene extends Phaser.Scene {
   private npc!: NPC;
   private rat!: Rat;
   private keyE!: Phaser.Input.Keyboard.Key;
+  private deskBounds!: { cx: number; cy: number; hw: number; hh: number };
+  private doorX = BG_WIDTH - 120;
+  private doorY = BG_HEIGHT - 120;
+  private readonly DOOR_INTERACT_DIST = 100;
+  private doorHint!: Phaser.GameObjects.Text;
+  private doorImage!: Phaser.GameObjects.Image;
 
   // Throttle how often we emit position (ms)
   private lastEmit = 0;
@@ -28,8 +34,10 @@ export default class MainScene extends Phaser.Scene {
 
   preload() {
     this.load.image('bg', '/assets/bg.png');
+    this.load.image('exit-door', '/assets/furnitures/exit-door.png');
     this.load.image('ped-stand1', '/assets/ped/stand1.png');
     this.load.image('ped-stand2', '/assets/ped/stand2.png');
+    this.load.image('working-desk', '/assets/furnitures/working-desk.png');
     this.load.image('front1', '/assets/main-charactor/front1.png');
 
     // down
@@ -77,6 +85,19 @@ export default class MainScene extends Phaser.Scene {
   create() {
     this.add.image(BG_WIDTH / 2, BG_HEIGHT / 2, 'bg').setScale(0.75);
 
+    // Exit door — bottom-right of the room
+    this.doorImage = this.add.image(this.doorX, this.doorY, 'exit-door').setScale(0.22).setDepth(10);
+    this.doorHint = this.add
+      .text(this.doorX, this.doorY - 80, '[E] Exit', {
+        fontSize: '11px',
+        color: '#ffffff',
+        backgroundColor: '#000000aa',
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5, 1)
+      .setVisible(false)
+      .setDepth(20);
+
     // Camera bounds match the visible bg area; zoom 1 so the world fills the screen
     this.cameras.main.setBounds(0, 0, BG_WIDTH, BG_HEIGHT);
     this.cameras.main.setZoom(1);
@@ -117,6 +138,14 @@ export default class MainScene extends Phaser.Scene {
     // Center camera on the room before following the player
     this.cameras.main.centerOn(BG_WIDTH / 2, BG_HEIGHT / 2);
     this.cameras.main.startFollow(this.player, true);
+
+    // Working desk behind the secretary NPC
+    // NPC sprite is 1024px at scale 0.2 = ~205px wide
+    // Desk sprite is 2816px at scale 0.07 = ~197px wide, 1536px → ~107px tall
+    this.add.image(180, 175, 'working-desk').setScale(0.07).setDepth(10);
+
+    // Collision rect for the desk (center x, center y, half-width, half-height)
+    this.deskBounds = { cx: 180, cy: 175, hw: 98, hh: 30 };
 
     // NPC — near top-left of the room
     this.npc = new NPC(this, 180, 160);
@@ -210,6 +239,33 @@ export default class MainScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (!this.chatOpen) this.player.update(time, delta);
 
+    // Depth sorting: player renders in front of door when below it, behind when above
+    // Also sort against NPC/desk (y=175)
+    const npcY = 175;
+    const aboveDoor = this.player.y <= this.doorY;
+    const aboveDesk = this.player.y <= npcY;
+
+    if (!aboveDoor || !aboveDesk) {
+      // Player is in front of at least one object — use highest needed depth
+      this.player.setDepth(11);
+    } else {
+      this.player.setDepth(9);
+    }
+
+    // Push player out of desk bounds (AABB)
+    const { cx, cy, hw, hh } = this.deskBounds;
+    const ph = 24; // player half-size (matches PLAYER_HALF in Player.ts)
+    const overlapX = (hw + ph) - Math.abs(this.player.x - cx);
+    const overlapY = (hh + ph) - Math.abs(this.player.y - cy);
+    if (overlapX > 0 && overlapY > 0) {
+      // Resolve along the axis of least penetration
+      if (overlapX < overlapY) {
+        this.player.x += overlapX * Math.sign(this.player.x - cx);
+      } else {
+        this.player.y += overlapY * Math.sign(this.player.y - cy);
+      }
+    }
+
     // NPC proximity + interaction
     const near = this.npc.updateProximity(this.player.x, this.player.y);
     if (near && Phaser.Input.Keyboard.JustDown(this.keyE)) {
@@ -223,6 +279,15 @@ export default class MainScene extends Phaser.Scene {
     }
 
     this.rat.update(delta);
+
+    // Door proximity + interaction
+    const nearDoor = Phaser.Math.Distance.Between(
+      this.player.x, this.player.y, this.doorX, this.doorY
+    ) < this.DOOR_INTERACT_DIST;
+    this.doorHint.setVisible(nearDoor);
+    if (nearDoor && Phaser.Input.Keyboard.JustDown(this.keyE)) {
+      window.dispatchEvent(new CustomEvent('exit-door'));
+    }
 
     // Throttled position emit
     if (time - this.lastEmit > this.EMIT_INTERVAL) {

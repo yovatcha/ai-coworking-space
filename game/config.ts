@@ -23,5 +23,6 @@ export const getGameConfig = (parent: string | HTMLElement): Phaser.Types.Core.G
       keyboard: { capture: [] },
     },
     backgroundColor: '#1a1a2e',
+    pixelArt: true,
   };
 };
