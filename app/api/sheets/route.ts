@@ -28,11 +28,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const entry = await prisma.sheetEntry.create({
-    data: { userId, name, sheetId, scriptUrl, columns: JSON.stringify(columns) },
-  });
-
-  return NextResponse.json({ ...entry, columns });
+  try {
+    const entry = await prisma.sheetEntry.create({
+      data: { userId, name, sheetId, scriptUrl, columns: JSON.stringify(columns) },
+    });
+    return NextResponse.json({ ...entry, columns });
+  } catch (err) {
+    console.error("[POST /api/sheets]", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
 
 // DELETE /api/sheets?id=xxx
