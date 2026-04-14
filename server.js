@@ -1,28 +1,31 @@
 import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
-import { createRequire } from 'module';
+import { pathToFileURL } from 'url';
+import { resolve } from 'path';
 
-const require = createRequire(import.meta.url);
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
-app.prepare().then(() => {
+app.prepare().then(async () => {
   const httpServer = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
   });
 
+  let initSocket;
   if (dev) {
-    require('ts-node').register({ transpileOnly: true });
-    const { initSocket } = require('./server/socket.ts');
-    initSocket(httpServer);
+    // Use ts-node ESM loader (registered via --loader in NODE_OPTIONS or package.json)
+    const mod = await import('./server/socket.ts');
+    initSocket = mod.initSocket;
   } else {
-    const { initSocket } = require('./dist/server/socket.js');
-    initSocket(httpServer);
+    const mod = await import('./dist/server/socket.js');
+    initSocket = mod.initSocket;
   }
+
+  initSocket(httpServer);
 
   httpServer.listen(PORT, () => {
     console.log(`> Ready on http://localhost:${PORT}`);
