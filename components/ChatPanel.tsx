@@ -13,13 +13,14 @@ interface ChatPanelProps {
   npcName?: string;
   npcId?: string;
   greeting?: string;
+  userId?: string;
 }
 
 function getTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function ChatPanel({ onClose, npcName = "SECRETARY", npcId = "secretary", greeting = "สวัสดีค่ะ ฉันคือ Secretary มีอะไรให้ช่วยไหม?" }: ChatPanelProps) {
+export default function ChatPanel({ onClose, npcName = "SECRETARY", npcId = "secretary", greeting = "สวัสดีค่ะ ฉันคือ Secretary มีอะไรให้ช่วยไหม?", userId }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     { from: "npc", text: greeting, time: getTime() },
   ]);
@@ -28,9 +29,35 @@ export default function ChatPanel({ onClose, npcName = "SECRETARY", npcId = "sec
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Load chat history on mount
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/chat-history?userId=${userId}&npcId=${npcId}`)
+      .then((r) => r.json())
+      .then((data: { role: string; content: string; createdAt: string }[]) => {
+        if (!Array.isArray(data) || data.length === 0) return;
+        const loaded: Message[] = data.map((m) => ({
+          from: m.role === "user" ? "user" : "npc",
+          text: m.content,
+          time: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        }));
+        setMessages(loaded);
+      })
+      .catch(() => {});
+  }, [userId, npcId]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
+
+  const saveMessage = (role: string, content: string) => {
+    if (!userId) return;
+    fetch("/api/chat-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, npcId, role, content }),
+    }).catch(() => {});
+  };
 
   const send = async () => {
     const text = input.trim();
@@ -40,6 +67,7 @@ export default function ChatPanel({ onClose, npcName = "SECRETARY", npcId = "sec
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
     setInput("");
+    saveMessage("user", text);
 
     const apiMessages = nextMessages.map((m) => ({
       role: m.from === "user" ? "user" : "assistant",
@@ -73,6 +101,7 @@ export default function ChatPanel({ onClose, npcName = "SECRETARY", npcId = "sec
       });
     }
     setIsTyping(false);
+    saveMessage("assistant", npcText);
   };
 
   const handleKey = (e: React.KeyboardEvent) => {

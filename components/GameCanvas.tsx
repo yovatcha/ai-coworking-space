@@ -5,7 +5,8 @@ import * as Phaser from "phaser";
 import { AnimatePresence, motion } from "framer-motion";
 import { getGameConfig } from "@/game/config";
 import ChatPanel from "./ChatPanel";
-import { logout } from "./LoginPage";
+import SheetBroPanel from "./SheetBroPanel";
+import { logout, getUserId } from "./LoginPage";
 
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -17,6 +18,7 @@ export default function GameCanvas() {
   const [sheetBroOpen, setSheetBroOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
+  const userId = getUserId();
 
   useEffect(() => {
     if (typeof window === "undefined" || !gameRef.current) return;
@@ -324,7 +326,7 @@ export default function GameCanvas() {
             }}
             className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-50"
           >
-            <ChatPanel onClose={() => setChatOpen(false)} />
+            <ChatPanel onClose={() => setChatOpen(false)} userId={userId} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -340,7 +342,7 @@ export default function GameCanvas() {
             transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
             className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-50"
           >
-            <ChatPanel npcName="GOOGLE BRO" npcId="google-bro" greeting="สวัสดีครับ ผมคือ Google Bro 🟦🟥🟨🟩 หากต้องการความช่วยเหลือเกี่ยวกับ Sheets, Docs หรือ Slides ยินดีให้บริการครับ" onClose={() => setGoogleBroOpen(false)} />
+            <ChatPanel npcName="GOOGLE BRO" npcId="google-bro" greeting="สวัสดีครับ ผมคือ Google Bro 🟦🟥🟨🟩 หากต้องการความช่วยเหลือเกี่ยวกับ Sheets, Docs หรือ Slides ยินดีให้บริการครับ" onClose={() => setGoogleBroOpen(false)} userId={userId} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -356,7 +358,11 @@ export default function GameCanvas() {
             transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
             className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-50"
           >
-            <ChatPanel npcName="SHEET BRO" npcId="sheet-bro" greeting="สวัสดีครับ ผมคือ Sheet Bro 🟩 ผมเชี่ยวชาญ Google Sheets โดยเฉพาะ มีอะไรให้ช่วยไหมครับ?" onClose={() => setSheetBroOpen(false)} />
+            <SheetBroPanel
+              onClose={() => setSheetBroOpen(false)}
+              onOpenGoogleBro={() => { setSheetBroOpen(false); setGoogleBroOpen(true); }}
+              userId={userId}
+            />
           </motion.div>
         )}
       </AnimatePresence>

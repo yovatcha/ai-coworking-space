@@ -3,10 +3,21 @@
 import { useState } from "react";
 
 const SESSION_KEY = "cowork_auth";
+const USER_ID_KEY = "cowork_user_id";
 
 export function isAuthenticated() {
   if (typeof window === "undefined") return false;
   return localStorage.getItem(SESSION_KEY) === "true";
+}
+
+export function getUserId(): string {
+  if (typeof window === "undefined") return "";
+  let id = localStorage.getItem(USER_ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(USER_ID_KEY, id);
+  }
+  return id;
 }
 
 export function logout() {

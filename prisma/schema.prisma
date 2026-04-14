@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  npcId     String
+  role      String   // "user" | "assistant"
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model SheetEntry {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  name      String
+  sheetId   String
+  scriptUrl String
+  columns   String   // JSON array stored as string
+  createdAt DateTime @default(now())
+}
