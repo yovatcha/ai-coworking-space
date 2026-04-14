@@ -1,16 +1,23 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.initSocket = initSocket;
-const socket_io_1 = require("socket.io");
-function initSocket(httpServer) {
+import { Server as SocketIOServer } from 'socket.io';
+export function initSocket(httpServer) {
     const allowedOrigin = process.env.FRONTEND_URL || '*';
-    const io = new socket_io_1.Server(httpServer, {
-        path: '/socket.io',
-        cors: {
-            origin: allowedOrigin,
-            methods: ['GET', 'POST'],
-        },
-        transports: ['websocket', 'polling'],
+    console.log(`[socket] Initializing Socket.IO (CORS origin: ${allowedOrigin})`);
+    let io;
+    try {
+        io = new SocketIOServer(httpServer, {
+            cors: {
+                origin: allowedOrigin,
+                methods: ['GET', 'POST'],
+            },
+            transports: ['polling', 'websocket'],
+        });
+    }
+    catch (err) {
+        console.error('[socket] Failed to initialize Socket.IO server:', err);
+        throw err;
+    }
+    io.engine.on('connection_error', (err) => {
+        console.error('[socket] Engine connection error:', err.req?.url, err.code, err.message, err.context);
     });
     // socketId -> last known state
     const players = new Map();
