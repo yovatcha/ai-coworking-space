@@ -4,6 +4,8 @@ import Player from '../entities/Player';
 import RemotePlayer from '../entities/RemotePlayer';
 import NPC from '../entities/NPC';
 import Rat from '../entities/Rat';
+import GoogleBro from '../entities/GoogleBro';
+import SheetBro from '../entities/SheetBro';
 
 // bg.png is 2752x1536 — displayed at 75% size for a medium room
 export const BG_WIDTH = 2064;
@@ -14,6 +16,8 @@ export default class MainScene extends Phaser.Scene {
   private socket!: Socket;
   private remotePlayers: Map<string, RemotePlayer> = new Map();
   private npc!: NPC;
+  private googleBro!: GoogleBro;
+  private sheetBro!: SheetBro;
   private rat!: Rat;
   private keyE!: Phaser.Input.Keyboard.Key;
   private deskBounds!: { cx: number; cy: number; hw: number; hh: number };
@@ -38,6 +42,10 @@ export default class MainScene extends Phaser.Scene {
     this.load.image('ped-stand1', '/assets/ped/stand1.png');
     this.load.image('ped-stand2', '/assets/ped/stand2.png');
     this.load.image('working-desk', '/assets/furnitures/working-desk.png');
+    this.load.image('google-bro-front1', '/assets/google-bro/front1.png');
+    this.load.image('google-bro-front2', '/assets/google-bro/fornt2.png');
+    this.load.image('sheet-bro-front1', '/assets/sheet-bro/front1.png');
+    this.load.image('sheet-bro-front2', '/assets/sheet-bro/front2.png');
     this.load.image('front1', '/assets/main-charactor/front1.png');
 
     // down
@@ -149,6 +157,12 @@ export default class MainScene extends Phaser.Scene {
 
     // NPC — near top-left of the room
     this.npc = new NPC(this, 180, 160);
+
+    // Google Bro — center-right of the room
+    this.googleBro = new GoogleBro(this, BG_WIDTH - 400, BG_HEIGHT / 2);
+
+    // Sheet Bro — Google Bro's employee, nearby
+    this.sheetBro = new SheetBro(this, BG_WIDTH - 280, BG_HEIGHT / 2);
 
     // Rat animations
     this.anims.create({ key: 'rat-idle', frames: [{ key: 'rat-front' }], frameRate: 1 });
@@ -270,6 +284,18 @@ export default class MainScene extends Phaser.Scene {
     const near = this.npc.updateProximity(this.player.x, this.player.y);
     if (near && Phaser.Input.Keyboard.JustDown(this.keyE)) {
       this.npc.interact();
+    }
+
+    // Google Bro proximity + interaction
+    const nearGoogleBro = this.googleBro.updateProximity(this.player.x, this.player.y);
+    if (nearGoogleBro && Phaser.Input.Keyboard.JustDown(this.keyE)) {
+      this.googleBro.interact();
+    }
+
+    // Sheet Bro proximity + interaction
+    const nearSheetBro = this.sheetBro.updateProximity(this.player.x, this.player.y);
+    if (nearSheetBro && Phaser.Input.Keyboard.JustDown(this.keyE)) {
+      this.sheetBro.interact();
     }
 
     // Rat proximity + interaction

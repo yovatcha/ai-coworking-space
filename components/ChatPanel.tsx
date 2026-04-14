@@ -10,15 +10,18 @@ interface Message {
 
 interface ChatPanelProps {
   onClose: () => void;
+  npcName?: string;
+  npcId?: string;
+  greeting?: string;
 }
 
 function getTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function ChatPanel({ onClose }: ChatPanelProps) {
+export default function ChatPanel({ onClose, npcName = "SECRETARY", npcId = "secretary", greeting = "สวัสดีค่ะ ฉันคือ Secretary มีอะไรให้ช่วยไหม?" }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { from: "npc", text: "สวัสดีค่ะ ฉันคือ Secretary มีอะไรให้ช่วยไหม?", time: getTime() },
+    { from: "npc", text: greeting, time: getTime() },
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -46,7 +49,7 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
     const res = await fetch("/api/secretary/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: apiMessages }),
+      body: JSON.stringify({ messages: apiMessages, npcId }),
     });
 
     if (!res.body) return;
@@ -398,7 +401,7 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
         <div className="pixel-header">
           <div className="pixel-avatar">🤖</div>
           <div className="pixel-header-info">
-            <span className="pixel-header-name">SECRETARY</span>
+            <span className="pixel-header-name">{npcName}</span>
             <span className="pixel-header-status">
               <span className="pixel-status-dot" />
               ONLINE
@@ -429,6 +432,10 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
                       </span>
                     ) : (
                       msg.text
+                        .replace(/\*\*(.*?)\*\*/g, '$1')
+                        .replace(/\*(.*?)\*/g, '$1')
+                        .replace(/^#{1,6}\s+/gm, '')
+                        .replace(/`([^`]+)`/g, '$1')
                     )}
                   </div>
                   {msg.time && !isEmpty && (

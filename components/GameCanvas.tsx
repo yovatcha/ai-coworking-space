@@ -13,6 +13,8 @@ export default function GameCanvas() {
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [ratOpen, setRatOpen] = useState(false);
+  const [googleBroOpen, setGoogleBroOpen] = useState(false);
+  const [sheetBroOpen, setSheetBroOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
 
@@ -46,6 +48,18 @@ export default function GameCanvas() {
   }, []);
 
   useEffect(() => {
+    const open = () => setGoogleBroOpen(true);
+    window.addEventListener("google-bro-chat", open);
+    return () => window.removeEventListener("google-bro-chat", open);
+  }, []);
+
+  useEffect(() => {
+    const open = () => setSheetBroOpen(true);
+    window.addEventListener("sheet-bro-chat", open);
+    return () => window.removeEventListener("sheet-bro-chat", open);
+  }, []);
+
+  useEffect(() => {
     const handle = () => { setExitConfirm(true); };
     window.addEventListener("exit-door", handle);
     return () => window.removeEventListener("exit-door", handle);
@@ -54,14 +68,14 @@ export default function GameCanvas() {
   // Notify Phaser scene when chat opens/closes so movement stops while typing
   useEffect(() => {
     window.dispatchEvent(
-      new CustomEvent(chatOpen || ratOpen ? "chat-opened" : "chat-closed"),
+      new CustomEvent(chatOpen || ratOpen || googleBroOpen || sheetBroOpen ? "chat-opened" : "chat-closed"),
     );
-    if (chatOpen || ratOpen) {
+    if (chatOpen || ratOpen || googleBroOpen || sheetBroOpen) {
       gameRef.current
         ?.querySelectorAll<HTMLElement>("canvas, *[tabindex]")
         .forEach((el) => el.blur());
     }
-  }, [chatOpen, ratOpen]);
+  }, [chatOpen, ratOpen, googleBroOpen, sheetBroOpen]);
 
   return (
     <div
@@ -311,6 +325,38 @@ export default function GameCanvas() {
             className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-50"
           >
             <ChatPanel onClose={() => setChatOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Google Bro chat popup */}
+      <AnimatePresence>
+        {googleBroOpen && (
+          <motion.div
+            key="google-bro-chat"
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-50"
+          >
+            <ChatPanel npcName="GOOGLE BRO" npcId="google-bro" greeting="สวัสดีครับ ผมคือ Google Bro 🟦🟥🟨🟩 หากต้องการความช่วยเหลือเกี่ยวกับ Sheets, Docs หรือ Slides ยินดีให้บริการครับ" onClose={() => setGoogleBroOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sheet Bro chat popup */}
+      <AnimatePresence>
+        {sheetBroOpen && (
+          <motion.div
+            key="sheet-bro-chat"
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-50"
+          >
+            <ChatPanel npcName="SHEET BRO" npcId="sheet-bro" greeting="สวัสดีครับ ผมคือ Sheet Bro 🟩 ผมเชี่ยวชาญ Google Sheets โดยเฉพาะ มีอะไรให้ช่วยไหมครับ?" onClose={() => setSheetBroOpen(false)} />
           </motion.div>
         )}
       </AnimatePresence>
