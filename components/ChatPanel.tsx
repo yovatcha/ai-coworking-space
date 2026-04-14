@@ -10,24 +10,54 @@ interface Message {
 
 interface ChatPanelProps {
   onClose: () => void;
+  npcName?: string;
+  npcId?: string;
+  greeting?: string;
+  userId?: string;
 }
 
 function getTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function ChatPanel({ onClose }: ChatPanelProps) {
+export default function ChatPanel({ onClose, npcName = "SECRETARY", npcId = "secretary", greeting = "สวัสดีค่ะ ฉันคือ Secretary มีอะไรให้ช่วยไหม?", userId }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { from: "npc", text: "สวัสดีค่ะ ฉันคือ Secretary มีอะไรให้ช่วยไหม?", time: getTime() },
+    { from: "npc", text: greeting, time: getTime() },
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Load chat history on mount
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/chat-history?userId=${userId}&npcId=${npcId}`)
+      .then((r) => r.json())
+      .then((data: { role: string; content: string; createdAt: string }[]) => {
+        if (!Array.isArray(data) || data.length === 0) return;
+        const loaded: Message[] = data.map((m) => ({
+          from: m.role === "user" ? "user" : "npc",
+          text: m.content,
+          time: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        }));
+        setMessages(loaded);
+      })
+      .catch(() => {});
+  }, [userId, npcId]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
+
+  const saveMessage = (role: string, content: string) => {
+    if (!userId) return;
+    fetch("/api/chat-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, npcId, role, content }),
+    }).catch(() => {});
+  };
 
   const send = async () => {
     const text = input.trim();
@@ -37,6 +67,7 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
     setInput("");
+    saveMessage("user", text);
 
     const apiMessages = nextMessages.map((m) => ({
       role: m.from === "user" ? "user" : "assistant",
@@ -46,7 +77,7 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
     const res = await fetch("/api/secretary/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: apiMessages }),
+      body: JSON.stringify({ messages: apiMessages, npcId }),
     });
 
     if (!res.body) return;
@@ -70,6 +101,7 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
       });
     }
     setIsTyping(false);
+    saveMessage("assistant", npcText);
   };
 
   const handleKey = (e: React.KeyboardEvent) => {
@@ -398,7 +430,7 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
         <div className="pixel-header">
           <div className="pixel-avatar">🤖</div>
           <div className="pixel-header-info">
-            <span className="pixel-header-name">SECRETARY</span>
+            <span className="pixel-header-name">{npcName}</span>
             <span className="pixel-header-status">
               <span className="pixel-status-dot" />
               ONLINE
@@ -429,6 +461,10 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
                       </span>
                     ) : (
                       msg.text
+                        .replace(/\*\*(.*?)\*\*/g, '$1')
+                        .replace(/\*(.*?)\*/g, '$1')
+                        .replace(/^#{1,6}\s+/gm, '')
+                        .replace(/`([^`]+)`/g, '$1')
                     )}
                   </div>
                   {msg.time && !isEmpty && (

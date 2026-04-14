@@ -14,7 +14,7 @@ export default class Player extends Phaser.GameObjects.Sprite {
     super(scene, x, y, texture);
     scene.add.existing(this);
 
-    this.setScale(0.18);
+    this.setScale(0.1);
 
     if (scene.input.keyboard) {
       this.cursors = scene.input.keyboard.addKeys({
