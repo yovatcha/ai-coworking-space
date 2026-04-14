@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "node server.js",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma migrate deploy && next build && tsc -p tsconfig.server.json",
     "start": "NODE_ENV=production node server.js",
     "build:backend": "tsc -p tsconfig.server.json",
     "start:backend": "node dist/server/index.js",
