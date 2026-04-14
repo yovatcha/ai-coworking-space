@@ -2,13 +2,14 @@
   "name": "aicowork",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=20.9.0"
   },
   "scripts": {
     "dev": "node server.js",
-    "build": "prisma generate && prisma migrate deploy && next build",
-    "start": "NODE_ENV=production node server.js",
+    "build": "prisma generate && next build && tsc -p tsconfig.server.json",
+    "start": "prisma migrate deploy && NODE_ENV=production node server.js",
     "build:backend": "tsc -p tsconfig.server.json",
     "start:backend": "node dist/server/index.js",
     "lint": "eslint"
