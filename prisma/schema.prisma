@@ -1,17 +1,17 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model ChatMessage {
   id        Int      @id @default(autoincrement())
   userId    String
   npcId     String
-  role      String   // "user" | "assistant"
+  role      String
   content   String
   createdAt DateTime @default(now())
 }
@@ -22,6 +22,6 @@ model SheetEntry {
   name      String
   sheetId   String
   scriptUrl String
-  columns   String   // JSON array stored as string
+  columns   String
   createdAt DateTime @default(now())
 }
