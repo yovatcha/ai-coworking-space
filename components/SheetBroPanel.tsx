@@ -90,6 +90,11 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
           body: JSON.stringify({ userId, name: newName.trim(), sheetId: newId.trim(), scriptUrl: newScriptUrl.trim(), columns }),
         });
         const saved = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(saved.error || "Failed to save sheet to database");
+        }
+
         // use DB id as the entry id for deletion later
         setSheets(prev => [...prev, { ...entry, id: String(saved.id) }]);
       } else {
@@ -98,8 +103,8 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
 
       setNewName(""); setNewId(""); setNewScriptUrl(""); setFetchStatus("");
       setView("sheets");
-    } catch {
-      setFetchStatus("เชื่อมต่อไม่ได้ ตรวจสอบ Script URL");
+    } catch (err: any) {
+      setFetchStatus(err.message || "เชื่อมต่อไม่ได้ ตรวจสอบ Script URL");
     }
   };
 
