@@ -7,9 +7,22 @@ export async function GET(req: Request) {
     return Response.json({ error: "missing params" }, { status: 400 });
   }
 
-  const res = await fetch(`${scriptUrl}?sheetId=${sheetId}`);
-  const data = await res.json();
-  return Response.json(data);
+  try {
+    const res = await fetch(`${scriptUrl}?sheetId=${sheetId}`, {
+      redirect: "follow",
+    });
+    if (!res.ok) {
+      return Response.json(
+        { error: `Apps Script returned ${res.status}` },
+        { status: 502 }
+      );
+    }
+    const data = await res.json();
+    return Response.json(data);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "fetch failed";
+    return Response.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
