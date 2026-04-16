@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SheetEntry {
-  id: string;       // spreadsheet ID
-  name: string;     // user-given label
+  id: string;
+  name: string;
   columns: string[];
-  scriptUrl: string; // deployed Apps Script web app URL
+  scriptUrl: string;
 }
 
 interface SheetBroPanelProps {
@@ -15,10 +15,10 @@ interface SheetBroPanelProps {
   userId?: string;
 }
 
-const PIXEL_FONT = "'Press Start 2P', monospace";
-const SARABUN = "'Sarabun', sans-serif";
+const PF = "'Press Start 2P', monospace";
+const SF = "'Sarabun', sans-serif";
 
-const APPS_SCRIPT_CODE = `// Deploy this as a Web App (Execute as: Me, Who has access: Anyone)
+const APPS_SCRIPT_CODE = `// Deploy as Web App (Execute as: Me, Who has access: Anyone)
 function doPost(e) {
   const data = JSON.parse(e.postData.contents);
   const ss = SpreadsheetApp.openById(data.sheetId);
@@ -38,73 +38,65 @@ function doGet(e) {
 }`;
 
 export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: SheetBroPanelProps) {
-  const [view, setView] = useState<"chat" | "sheets" | "add" | "fill" | "script">("chat");
+  const [view, setView] = useState<"chat" | "sheets" | "add" | "script">("chat");
   const [sheets, setSheets] = useState<SheetEntry[]>([]);
   const [activeSheet, setActiveSheet] = useState<SheetEntry | null>(null);
 
-  // Load sheets from DB on mount
-  useEffect(() => {
-    if (!userId) return;
-    fetch(`/api/sheets?userId=${userId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setSheets(data);
-      })
-      .catch(() => {});
-  }, [userId]);
-
-  // Add sheet form
   const [newName, setNewName] = useState("");
   const [newId, setNewId] = useState("");
   const [newScriptUrl, setNewScriptUrl] = useState("");
   const [fetchStatus, setFetchStatus] = useState("");
 
-  // Row fill
   const [rowValues, setRowValues] = useState<Record<string, string>>({});
   const [sendStatus, setSendStatus] = useState("");
-
-  // Script copy
+  const [refreshStatus, setRefreshStatus] = useState("");
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/sheets?userId=${userId}`)
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setSheets(data); })
+      .catch(() => {});
+  }, [userId]);
+
   const fetchColumns = async (sheetId: string, scriptUrl: string): Promise<string[]> => {
-    const res = await fetch(`${scriptUrl}?sheetId=${sheetId}`);
+    const res = await fetch(`/api/sheets-proxy?scriptUrl=${encodeURIComponent(scriptUrl)}&sheetId=${encodeURIComponent(sheetId)}`);
     const data = await res.json();
     return data.headers ?? [];
   };
 
   const handleAddSheet = async () => {
     if (!newName.trim() || !newId.trim() || !newScriptUrl.trim()) {
-      setFetchStatus("กรุณากรอกข้อมูลให้ครบ");
-      return;
+      setFetchStatus("กรุณากรอกข้อมูลให้ครบ"); return;
     }
     setFetchStatus("กำลังดึง columns...");
     try {
       const columns = await fetchColumns(newId.trim(), newScriptUrl.trim());
       if (!columns.length) { setFetchStatus("ไม่พบ columns ใน row แรก"); return; }
       const entry: SheetEntry = { id: newId.trim(), name: newName.trim(), columns, scriptUrl: newScriptUrl.trim() };
-
-      if (userId) {
-        const res = await fetch("/api/sheets", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, name: newName.trim(), sheetId: newId.trim(), scriptUrl: newScriptUrl.trim(), columns }),
-        });
-        const saved = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(saved.error || "Failed to save sheet to database");
-        }
-
-        // use DB id as the entry id for deletion later
-        setSheets(prev => [...prev, { ...entry, id: String(saved.id) }]);
-      } else {
-        setSheets(prev => [...prev, entry]);
-      }
-
+      setSheets(prev => [...prev, entry]);
       setNewName(""); setNewId(""); setNewScriptUrl(""); setFetchStatus("");
       setView("sheets");
-    } catch (err: any) {
-      setFetchStatus(err.message || "เชื่อมต่อไม่ได้ ตรวจสอบ Script URL");
+    } catch {
+      setFetchStatus("เชื่อมต่อไม่ได้ ตรวจสอบ Script URL");
+    }
+  };
+
+  const handleRefreshColumns = async () => {
+    if (!activeSheet) return;
+    setRefreshStatus("กำลังดึง columns...");
+    try {
+      const columns = await fetchColumns(activeSheet.id, activeSheet.scriptUrl);
+      if (!columns.length) { setRefreshStatus("ไม่พบ columns"); return; }
+      const updated = { ...activeSheet, columns };
+      setActiveSheet(updated);
+      setSheets(prev => prev.map(s => s.id === updated.id ? updated : s));
+      setRowValues({});
+      setRefreshStatus("อัปเดตแล้ว ✓");
+      setTimeout(() => setRefreshStatus(""), 2000);
+    } catch {
+      setRefreshStatus("เชื่อมต่อไม่ได้");
     }
   };
 
@@ -113,9 +105,10 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
     setSendStatus("กำลังส่ง...");
     try {
       const row = activeSheet.columns.map(col => rowValues[col] ?? "");
-      const res = await fetch(activeSheet.scriptUrl, {
+      const res = await fetch("/api/sheets-proxy", {
         method: "POST",
-        body: JSON.stringify({ sheetId: activeSheet.id, row }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scriptUrl: activeSheet.scriptUrl, sheetId: activeSheet.id, row }),
       });
       const data = await res.json();
       if (data.ok) { setSendStatus("ส่งสำเร็จ ✓"); setRowValues({}); }
@@ -134,13 +127,9 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         .sb-panel {
-          width: 680px; height: 420px;
-          display: flex; flex-direction: column;
-          background: #0d1f0d;
-          font-family: ${PIXEL_FONT};
-          image-rendering: pixelated;
+          width: 680px; height: 420px; display: flex; flex-direction: column;
+          background: #0d1f0d; font-family: ${PF}; image-rendering: pixelated;
           border: 4px solid #2d6a2d;
           box-shadow: -4px -4px 0 0 #4caf50, 4px 4px 0 0 #051005, 6px 6px 0 0 #000;
           position: relative;
@@ -150,90 +139,40 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
           background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.10) 3px,rgba(0,0,0,0.10) 4px);
           z-index: 10;
         }
-        .sb-header {
-          display: flex; align-items: center; gap: 8px;
-          padding: 8px 10px; background: #051005;
-          border-bottom: 4px solid #000; flex-shrink: 0;
-        }
-        .sb-avatar {
-          width: 32px; height: 32px; background: #1a3d1a;
-          border: 3px solid #4caf50;
-          box-shadow: 2px 2px 0 #000;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 16px; flex-shrink: 0;
-        }
+        .sb-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #051005; border-bottom: 4px solid #000; flex-shrink: 0; }
+        .sb-avatar { width: 32px; height: 32px; background: #1a3d1a; border: 3px solid #4caf50; box-shadow: 2px 2px 0 #000; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
         .sb-header-name { font-size: 9px; color: #a5d6a7; text-shadow: 2px 2px 0 #000; }
         .sb-header-status { font-size: 7px; color: #4caf50; display: flex; align-items: center; gap: 5px; }
-        .sb-dot { width: 6px; height: 6px; background: #4caf50; box-shadow: 1px 1px 0 #000; animation: pixelBlink 1.4s step-start infinite; }
-        @keyframes pixelBlink { 0%,100%{opacity:1} 50%{opacity:0} }
-        .sb-close {
-          width: 24px; height: 24px; background: #c0392b;
-          border: 3px solid #e74c3c; box-shadow: 2px 2px 0 #000;
-          color: #fff; font-family: ${PIXEL_FONT}; font-size: 8px;
-          cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: auto;
-        }
+        .sb-dot { width: 6px; height: 6px; background: #4caf50; box-shadow: 1px 1px 0 #000; animation: sbBlink 1.4s step-start infinite; }
+        @keyframes sbBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .sb-close { width: 24px; height: 24px; background: #c0392b; border: 3px solid #e74c3c; box-shadow: 2px 2px 0 #000; color: #fff; font-family: ${PF}; font-size: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: auto; }
         .sb-close:hover { background: #e74c3c; transform: translate(1px,1px); box-shadow: 1px 1px 0 #000; }
-        .sb-tabs {
-          display: flex; background: #0a1a0a; border-bottom: 3px solid #000; flex-shrink: 0;
-        }
-        .sb-tab {
-          flex: 1; padding: 6px 4px; font-family: ${PIXEL_FONT}; font-size: 7px;
-          color: #4a7a4a; background: transparent; border: none; border-right: 2px solid #000;
-          cursor: pointer; letter-spacing: 0.03em;
-        }
+        .sb-tabs { display: flex; background: #0a1a0a; border-bottom: 3px solid #000; flex-shrink: 0; }
+        .sb-tab { flex: 1; padding: 6px 4px; font-family: ${PF}; font-size: 7px; color: #4a7a4a; background: transparent; border: none; border-right: 2px solid #000; cursor: pointer; letter-spacing: 0.03em; }
         .sb-tab:last-child { border-right: none; }
         .sb-tab.active { background: #0d1f0d; color: #4caf50; }
-        .sb-tab:hover:not(.active) { background: #0a1a0a; color: #81c784; }
-        .sb-body {
-          flex: 1; overflow-y: auto; padding: 12px;
-          background: #0d1f0d;
-          background-image: radial-gradient(circle, #1a2d1a 1px, transparent 1px);
-          background-size: 12px 12px;
-        }
+        .sb-tab:hover:not(.active) { color: #81c784; }
+        .sb-body { flex: 1; overflow-y: auto; padding: 12px; background: #0d1f0d; background-image: radial-gradient(circle, #1a2d1a 1px, transparent 1px); background-size: 12px 12px; }
         .sb-body::-webkit-scrollbar { width: 8px; }
         .sb-body::-webkit-scrollbar-track { background: #051005; }
         .sb-body::-webkit-scrollbar-thumb { background: #4caf50; border: 2px solid #051005; }
-        .sb-label { font-family: ${PIXEL_FONT}; font-size: 7px; color: #81c784; margin-bottom: 4px; display: block; }
-        .sb-input {
-          width: 100%; padding: 7px 8px; margin-bottom: 10px;
-          font-family: ${SARABUN}; font-size: 14px;
-          background: #051005; color: #a5d6a7;
-          border: 3px solid #2d6a2d; box-shadow: inset 2px 2px 0 #000;
-          outline: none; box-sizing: border-box;
-        }
+        .sb-label { font-family: ${PF}; font-size: 7px; color: #81c784; margin-bottom: 4px; display: block; }
+        .sb-input { width: 100%; padding: 7px 8px; margin-bottom: 10px; font-family: ${SF}; font-size: 14px; background: #051005; color: #a5d6a7; border: 3px solid #2d6a2d; box-shadow: inset 2px 2px 0 #000; outline: none; box-sizing: border-box; }
         .sb-input:focus { border-color: #4caf50; }
-        .sb-btn {
-          padding: 8px 14px; font-family: ${PIXEL_FONT}; font-size: 7px;
-          background: #1b5e20; color: #a5d6a7;
-          border: 3px solid #4caf50; box-shadow: 3px 3px 0 #000;
-          cursor: pointer; letter-spacing: 0.05em;
-        }
+        .sb-btn { padding: 8px 14px; font-family: ${PF}; font-size: 7px; background: #1b5e20; color: #a5d6a7; border: 3px solid #4caf50; box-shadow: 3px 3px 0 #000; cursor: pointer; letter-spacing: 0.05em; }
         .sb-btn:hover { transform: translate(1px,1px); box-shadow: 2px 2px 0 #000; }
         .sb-btn:active { transform: translate(2px,2px); box-shadow: none; }
         .sb-btn.primary { background: #4caf50; color: #000; }
-        .sb-sheet-card {
-          padding: 8px 10px; margin-bottom: 8px;
-          background: #0a1a0a; border: 2px solid #2d6a2d;
-          box-shadow: 2px 2px 0 #000; cursor: pointer;
-          display: flex; align-items: center; justify-content: space-between;
-        }
+        .sb-sheet-card { padding: 8px 10px; margin-bottom: 8px; background: #0a1a0a; border: 2px solid #2d6a2d; box-shadow: 2px 2px 0 #000; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
         .sb-sheet-card:hover { border-color: #4caf50; background: #0d200d; }
-        .sb-sheet-name { font-family: ${PIXEL_FONT}; font-size: 8px; color: #a5d6a7; }
-        .sb-sheet-cols { font-family: ${SARABUN}; font-size: 12px; color: #4a7a4a; }
-        .sb-code {
-          font-family: monospace; font-size: 11px; color: #a5d6a7;
-          background: #051005; border: 2px solid #2d6a2d;
-          padding: 10px; white-space: pre-wrap; word-break: break-all;
-          max-height: 160px; overflow-y: auto; margin-bottom: 10px;
-        }
-        .sb-status { font-family: ${SARABUN}; font-size: 13px; color: #81c784; margin-top: 6px; }
-        .sb-redirect {
-          font-family: ${SARABUN}; font-size: 14px; color: #a5d6a7; line-height: 1.7;
-        }
+        .sb-sheet-name { font-family: ${PF}; font-size: 8px; color: #a5d6a7; }
+        .sb-sheet-cols { font-family: ${SF}; font-size: 12px; color: #4a7a4a; }
+        .sb-code { font-family: monospace; font-size: 11px; color: #a5d6a7; background: #051005; border: 2px solid #2d6a2d; padding: 10px; white-space: pre-wrap; word-break: break-all; max-height: 160px; overflow-y: auto; margin-bottom: 10px; }
+        .sb-status { font-family: ${SF}; font-size: 13px; color: #81c784; margin-top: 6px; }
+        .sb-text { font-family: ${SF}; font-size: 14px; color: #a5d6a7; line-height: 1.7; }
       `}</style>
 
       <div className="sb-panel">
-        {/* Header */}
         <div className="sb-header">
           <div className="sb-avatar">🟩</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -243,50 +182,41 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
           <button className="sb-close" onClick={onClose}>X</button>
         </div>
 
-        {/* Tabs */}
         <div className="sb-tabs">
-          {(["chat","sheets","add","script"] as const).map(t => (
-            <button key={t} className={`sb-tab${view === t ? " active" : ""}`}
-              onClick={() => setView(t as any)}>
+          {(["chat", "sheets", "add", "script"] as const).map(t => (
+            <button key={t} className={`sb-tab${view === t ? " active" : ""}`} onClick={() => setView(t)}>
               {t === "chat" ? "CHAT" : t === "sheets" ? "MY SHEETS" : t === "add" ? "+ ADD" : "SCRIPT"}
             </button>
           ))}
         </div>
 
-        {/* Body */}
         <div className="sb-body">
 
-          {/* CHAT tab — redirect info */}
           {view === "chat" && (
-            <div className="sb-redirect">
+            <div className="sb-text">
               สวัสดีครับ ผมคือ Sheet Bro 🟩<br /><br />
               ผมช่วยคุณเชื่อมต่อกับ Google Sheets ได้โดยตรงครับ<br /><br />
               วิธีใช้งาน:<br />
-              1. ไปที่แท็บ <b>SCRIPT</b> — คัดลอก Apps Script แล้ว deploy เป็น Web App<br />
-              2. ไปที่แท็บ <b>+ ADD</b> — เพิ่ม Sheet ID และ Script URL<br />
-              3. ไปที่แท็บ <b>MY SHEETS</b> — เลือก sheet แล้วกรอกข้อมูล<br /><br />
+              1. แท็บ SCRIPT — คัดลอก Apps Script แล้ว deploy เป็น Web App<br />
+              2. แท็บ + ADD — เพิ่ม Sheet ID และ Script URL<br />
+              3. แท็บ MY SHEETS — เลือก sheet แล้วกรอกข้อมูล<br /><br />
               {onOpenGoogleBro && (
-                <span>ต้องการคุยกับ Google Bro? <button onClick={onOpenGoogleBro}
-                  style={{ fontFamily: SARABUN, fontSize: 14, color: "#4caf50", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>คลิกที่นี่</button></span>
+                <span>ต้องการคุยกับ Google Bro?{" "}
+                  <button onClick={onOpenGoogleBro} style={{ fontFamily: SF, fontSize: 14, color: "#4caf50", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>คลิกที่นี่</button>
+                </span>
               )}
             </div>
           )}
 
-          {/* SCRIPT tab */}
           {view === "script" && (
             <>
               <span className="sb-label">APPS SCRIPT — deploy as Web App (Anyone can access)</span>
               <div className="sb-code">{APPS_SCRIPT_CODE}</div>
-              <button className="sb-btn primary" onClick={copyScript}>
-                {copied ? "COPIED ✓" : "COPY SCRIPT"}
-              </button>
-              <div className="sb-status" style={{ marginTop: 8, fontSize: 12 }}>
-                หลัง deploy แล้ว นำ Web App URL มาใส่ในแท็บ + ADD ครับ
-              </div>
+              <button className="sb-btn primary" onClick={copyScript}>{copied ? "COPIED ✓" : "COPY SCRIPT"}</button>
+              <div className="sb-status" style={{ marginTop: 8, fontSize: 12 }}>หลัง deploy แล้ว นำ Web App URL มาใส่ในแท็บ + ADD ครับ</div>
             </>
           )}
 
-          {/* ADD tab */}
           {view === "add" && (
             <>
               <span className="sb-label">SHEET NAME</span>
@@ -300,36 +230,33 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
             </>
           )}
 
-          {/* MY SHEETS tab */}
           {view === "sheets" && !activeSheet && (
             <>
-              {sheets.length === 0 && (
-                <div className="sb-redirect">ยังไม่มี sheet ครับ ไปที่แท็บ + ADD เพื่อเพิ่มครับ</div>
-              )}
+              {sheets.length === 0 && <div className="sb-text">ยังไม่มี sheet ครับ ไปที่แท็บ + ADD เพื่อเพิ่มครับ</div>}
               {sheets.map((s, i) => (
                 <div key={i} className="sb-sheet-card" onClick={() => { setActiveSheet(s); setRowValues({}); setSendStatus(""); }}>
                   <div>
                     <div className="sb-sheet-name">{s.name}</div>
                     <div className="sb-sheet-cols">{s.columns.join(" · ")}</div>
                   </div>
-                  <span style={{ fontFamily: PIXEL_FONT, fontSize: 8, color: "#4caf50" }}>▶</span>
+                  <span style={{ fontFamily: PF, fontSize: 8, color: "#4caf50" }}>▶</span>
                 </div>
               ))}
             </>
           )}
 
-          {/* FILL ROW view */}
           {view === "sheets" && activeSheet && (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <button className="sb-btn" onClick={() => setActiveSheet(null)}>◀ BACK</button>
-                <span style={{ fontFamily: PIXEL_FONT, fontSize: 8, color: "#a5d6a7" }}>{activeSheet.name}</span>
+                <span style={{ fontFamily: PF, fontSize: 8, color: "#a5d6a7" }}>{activeSheet.name}</span>
+                <button className="sb-btn" style={{ marginLeft: "auto" }} onClick={handleRefreshColumns}>↻ REFRESH</button>
               </div>
+              {refreshStatus && <div className="sb-status" style={{ marginBottom: 8 }}>{refreshStatus}</div>}
               {activeSheet.columns.map(col => (
                 <div key={col}>
                   <span className="sb-label">{col.toUpperCase()}</span>
-                  <input className="sb-input" value={rowValues[col] ?? ""}
-                    onChange={e => setRowValues(prev => ({ ...prev, [col]: e.target.value }))} />
+                  <input className="sb-input" value={rowValues[col] ?? ""} onChange={e => setRowValues(prev => ({ ...prev, [col]: e.target.value }))} />
                 </div>
               ))}
               <button className="sb-btn primary" onClick={handleSendRow}>SEND TO SHEET</button>
