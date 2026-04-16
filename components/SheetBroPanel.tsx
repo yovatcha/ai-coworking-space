@@ -52,6 +52,7 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
   const [sendStatus, setSendStatus] = useState("");
   const [refreshStatus, setRefreshStatus] = useState("");
   const [copied, setCopied] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const loadSheets = () => {
     fetch(`/api/sheets`)
@@ -114,6 +115,12 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
     } catch {
       setRefreshStatus("เชื่อมต่อไม่ได้");
     }
+  };
+
+  const handleDeleteSheet = async (id: number) => {
+    await fetch(`/api/sheets?id=${id}`, { method: "DELETE" });
+    setSheets(prev => prev.filter(s => s.id !== id));
+    setConfirmDeleteId(null);
   };
 
   const handleSendRow = async () => {
@@ -255,7 +262,14 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
                     <div className="sb-sheet-name">{s.name}</div>
                     <div className="sb-sheet-cols">{s.columns.join(" · ")}</div>
                   </div>
-                  <span style={{ fontFamily: PF, fontSize: 8, color: "#4caf50" }}>▶</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontFamily: PF, fontSize: 8, color: "#4caf50" }}>▶</span>
+                    <button
+                      className="sb-btn"
+                      style={{ padding: "4px 8px", fontSize: 7, background: "#3b0a0a", borderColor: "#c0392b", color: "#e57373" }}
+                      onClick={e => { e.stopPropagation(); setConfirmDeleteId(s.id); }}
+                    >DEL</button>
+                  </div>
                 </div>
               ))}
             </>
@@ -282,6 +296,28 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
 
         </div>
       </div>
+
+      {confirmDeleteId !== null && (
+        <div style={{
+          position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(0,0,0,0.7)", zIndex: 9999,
+        }}>
+          <div style={{
+            background: "#0d1f0d", border: "4px solid #c0392b",
+            boxShadow: "4px 4px 0 #000", padding: "24px 28px", display: "flex", flexDirection: "column", gap: 16,
+          }}>
+            <span style={{ fontFamily: PF, fontSize: 8, color: "#e57373" }}>ลบ sheet นี้?</span>
+            <span style={{ fontFamily: SF, fontSize: 13, color: "#a5d6a7" }}>
+              {sheets.find(s => s.id === confirmDeleteId)?.name}
+            </span>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="sb-btn" style={{ background: "#3b0a0a", borderColor: "#c0392b", color: "#e57373" }}
+                onClick={() => handleDeleteSheet(confirmDeleteId)}>ลบ</button>
+              <button className="sb-btn" onClick={() => setConfirmDeleteId(null)}>ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
