@@ -31,9 +31,20 @@ function doPost(e) {
 
 function doGet(e) {
   const sheetId = e.parameter.sheetId;
+  const action = e.parameter.action;
   const ss = SpreadsheetApp.openById(sheetId);
   const sheet = ss.getSheets()[0];
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const lastCol = sheet.getLastColumn();
+  const lastRow = sheet.getLastRow();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  if (action === 'getData') {
+    const dataRows = lastRow > 1
+      ? sheet.getRange(2, 1, lastRow - 1, lastCol).getValues()
+          .map(row => Object.fromEntries(headers.map((h, i) => [h, row[i]])))
+      : [];
+    return ContentService.createTextOutput(JSON.stringify({ headers, rows: dataRows, totalRows: dataRows.length }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   return ContentService.createTextOutput(JSON.stringify({ headers }))
     .setMimeType(ContentService.MimeType.JSON);
 }`;
@@ -53,6 +64,12 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
   const [refreshStatus, setRefreshStatus] = useState("");
   const [copied, setCopied] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  // Chat state
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatSheet, setChatSheet] = useState<SheetEntry | null>(null);
 
   const loadSheets = () => {
     fetch(`/api/sheets`)
@@ -117,6 +134,41 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
     }
   };
 
+  const sendChat = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = { role: "user" as const, content: chatInput.trim() };
+    const next = [...chatMessages, userMsg];
+    setChatMessages(next);
+    setChatInput("");
+    setChatLoading(true);
+    try {
+      const res = await fetch("/api/sheet-bro/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: next,
+          sheetName: chatSheet?.name ?? null,
+          sheetId: chatSheet?.sheetId ?? null,
+          scriptUrl: chatSheet?.scriptUrl ?? null,
+          columns: chatSheet?.columns ?? [],
+        }),
+      });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let reply = "";
+      setChatMessages(m => [...m, { role: "assistant", content: "" }]);
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        reply += decoder.decode(value, { stream: true });
+        setChatMessages(m => [...m.slice(0, -1), { role: "assistant", content: reply }]);
+      }
+    } catch {
+      setChatMessages(m => [...m, { role: "assistant", content: "เกิดข้อผิดพลาด ลองใหม่อีกครั้งครับ" }]);
+    }
+    setChatLoading(false);
+  };
+
   const handleDeleteSheet = async (id: number) => {
     await fetch(`/api/sheets?id=${id}`, { method: "DELETE" });
     setSheets(prev => prev.filter(s => s.id !== id));
@@ -175,7 +227,7 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
         .sb-tab:last-child { border-right: none; }
         .sb-tab.active { background: #0d1f0d; color: #4caf50; }
         .sb-tab:hover:not(.active) { color: #81c784; }
-        .sb-body { flex: 1; overflow-y: auto; padding: 12px; background: #0d1f0d; background-image: radial-gradient(circle, #1a2d1a 1px, transparent 1px); background-size: 12px 12px; }
+        .sb-body { flex: 1; overflow-y: auto; padding: 12px; background: #0d1f0d; background-image: radial-gradient(circle, #1a2d1a 1px, transparent 1px); background-size: 12px 12px; display: flex; flex-direction: column; }
         .sb-body::-webkit-scrollbar { width: 8px; }
         .sb-body::-webkit-scrollbar-track { background: #051005; }
         .sb-body::-webkit-scrollbar-thumb { background: #4caf50; border: 2px solid #051005; }
@@ -193,6 +245,17 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
         .sb-code { font-family: monospace; font-size: 11px; color: #a5d6a7; background: #051005; border: 2px solid #2d6a2d; padding: 10px; white-space: pre-wrap; word-break: break-all; max-height: 160px; overflow-y: auto; margin-bottom: 10px; }
         .sb-status { font-family: ${SF}; font-size: 13px; color: #81c784; margin-top: 6px; }
         .sb-text { font-family: ${SF}; font-size: 14px; color: #a5d6a7; line-height: 1.7; }
+        .sb-chat-body { display: flex; flex-direction: column; height: 100%; gap: 8px; }
+        .sb-chat-msgs { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-bottom: 4px; }
+        .sb-chat-msgs::-webkit-scrollbar { width: 6px; }
+        .sb-chat-msgs::-webkit-scrollbar-thumb { background: #4caf50; }
+        .sb-msg { padding: 7px 10px; max-width: 85%; font-family: ${SF}; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+        .sb-msg.user { background: #1b5e20; color: #e8f5e9; border: 2px solid #4caf50; align-self: flex-end; }
+        .sb-msg.assistant { background: #0a1a0a; color: #a5d6a7; border: 2px solid #2d6a2d; align-self: flex-start; }
+        .sb-chat-footer { display: flex; gap: 6px; flex-shrink: 0; }
+        .sb-chat-input { flex: 1; padding: 7px 8px; font-family: ${SF}; font-size: 13px; background: #051005; color: #a5d6a7; border: 3px solid #2d6a2d; outline: none; }
+        .sb-chat-input:focus { border-color: #4caf50; }
+        .sb-chat-select { width: 100%; padding: 6px 8px; margin-bottom: 8px; font-family: ${SF}; font-size: 13px; background: #051005; color: #a5d6a7; border: 3px solid #2d6a2d; outline: none; }
       `}</style>
 
       <div className="sb-panel">
@@ -216,17 +279,46 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
         <div className="sb-body">
 
           {view === "chat" && (
-            <div className="sb-text">
-              สวัสดีครับ ผมคือ Sheet Bro 🟩<br /><br />
-              ผมช่วยคุณเชื่อมต่อกับ Google Sheets ได้โดยตรงครับ<br /><br />
-              วิธีใช้งาน:<br />
-              1. แท็บ SCRIPT — คัดลอก Apps Script แล้ว deploy เป็น Web App<br />
-              2. แท็บ + ADD — เพิ่ม Sheet ID และ Script URL<br />
-              3. แท็บ MY SHEETS — เลือก sheet แล้วกรอกข้อมูล<br /><br />
+            <div className="sb-chat-body">
+              <div style={{ flexShrink: 0 }}>
+                <span className="sb-label">SHEET CONTEXT (optional)</span>
+                <select className="sb-chat-select" value={chatSheet?.id ?? ""} onChange={e => {
+                  const s = sheets.find(s => String(s.id) === e.target.value) ?? null;
+                  setChatSheet(s);
+                  setChatMessages([]);
+                }}>
+                  <option value="">— ไม่เลือก sheet —</option>
+                  {sheets.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="sb-chat-msgs">
+                {chatMessages.length === 0 && (
+                  <div className="sb-msg assistant">
+                    สวัสดีครับ ผมคือ Sheet Bro 🟩 เลือก sheet แล้วถามผมได้เลยครับ เช่น "sheet นี้ใช้ทำอะไร" หรือ "สรุปข้อมูลให้หน่อย"
+                  </div>
+                )}
+                {chatMessages.map((m, i) => (
+                  <div key={i} className={`sb-msg ${m.role}`}>{m.content}</div>
+                ))}
+              </div>
+              <div className="sb-chat-footer">
+                <input
+                  className="sb-chat-input"
+                  placeholder="พิมพ์ข้อความ..."
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") sendChat(); }}
+                  disabled={chatLoading}
+                />
+                <button className="sb-btn primary" onClick={sendChat} disabled={chatLoading}>
+                  {chatLoading ? "..." : "SEND"}
+                </button>
+              </div>
               {onOpenGoogleBro && (
-                <span>ต้องการคุยกับ Google Bro?{" "}
-                  <button onClick={onOpenGoogleBro} style={{ fontFamily: SF, fontSize: 14, color: "#4caf50", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>คลิกที่นี่</button>
-                </span>
+                <div style={{ fontFamily: SF, fontSize: 12, color: "#4a7a4a", flexShrink: 0 }}>
+                  ต้องการคุยกับ Google Bro?{" "}
+                  <button onClick={onOpenGoogleBro} style={{ fontFamily: SF, fontSize: 12, color: "#4caf50", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>คลิกที่นี่</button>
+                </div>
               )}
             </div>
           )}
