@@ -18,7 +18,11 @@ export default function GameCanvas() {
   const [sheetBroOpen, setSheetBroOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
-  const userId = getUserId();
+  const [userId, setUserId] = useState("");
+
+  useEffect(() => {
+    setUserId(getUserId());
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || !gameRef.current) return;

@@ -1,17 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/sheets?userId=xxx
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get("userId");
-
-  if (!userId) {
-    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
-  }
-
+// GET /api/sheets — returns all sheets (shared across all users)
+export async function GET() {
   const sheets = await prisma.sheetEntry.findMany({
-    where: { userId },
     orderBy: { createdAt: "asc" },
   });
 

@@ -53,13 +53,22 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
   const [refreshStatus, setRefreshStatus] = useState("");
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (!userId) return;
-    fetch(`/api/sheets?userId=${userId}`)
+  const loadSheets = () => {
+    fetch(`/api/sheets`)
       .then(r => r.json())
       .then(data => { if (Array.isArray(data)) setSheets(data); })
       .catch(() => {});
-  }, [userId]);
+  };
+
+  // Fetch on mount
+  useEffect(() => {
+    loadSheets();
+  }, []);
+
+  // Re-fetch when switching to the sheets tab
+  useEffect(() => {
+    if (view === "sheets") loadSheets();
+  }, [view]);
 
   const fetchColumns = async (sheetId: string, scriptUrl: string): Promise<string[]> => {
     const res = await fetch(`/api/sheets-proxy?scriptUrl=${encodeURIComponent(scriptUrl)}&sheetId=${encodeURIComponent(sheetId)}`);
