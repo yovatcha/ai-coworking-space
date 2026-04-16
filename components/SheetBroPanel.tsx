@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 
 interface SheetEntry {
-  id: string;
+  id: number;
   name: string;
+  sheetId: string;
   columns: string[];
   scriptUrl: string;
 }
@@ -74,7 +75,13 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
     try {
       const columns = await fetchColumns(newId.trim(), newScriptUrl.trim());
       if (!columns.length) { setFetchStatus("ไม่พบ columns ใน row แรก"); return; }
-      const entry: SheetEntry = { id: newId.trim(), name: newName.trim(), columns, scriptUrl: newScriptUrl.trim() };
+      const res = await fetch("/api/sheets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, name: newName.trim(), sheetId: newId.trim(), scriptUrl: newScriptUrl.trim(), columns }),
+      });
+      const entry = await res.json();
+      if (entry.error) { setFetchStatus("บันทึกไม่สำเร็จ: " + entry.error); return; }
       setSheets(prev => [...prev, entry]);
       setNewName(""); setNewId(""); setNewScriptUrl(""); setFetchStatus("");
       setView("sheets");
@@ -87,7 +94,7 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
     if (!activeSheet) return;
     setRefreshStatus("กำลังดึง columns...");
     try {
-      const columns = await fetchColumns(activeSheet.id, activeSheet.scriptUrl);
+      const columns = await fetchColumns(activeSheet.sheetId, activeSheet.scriptUrl);
       if (!columns.length) { setRefreshStatus("ไม่พบ columns"); return; }
       const updated = { ...activeSheet, columns };
       setActiveSheet(updated);
@@ -108,7 +115,7 @@ export default function SheetBroPanel({ onClose, onOpenGoogleBro, userId }: Shee
       const res = await fetch("/api/sheets-proxy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scriptUrl: activeSheet.scriptUrl, sheetId: activeSheet.id, row }),
+        body: JSON.stringify({ scriptUrl: activeSheet.scriptUrl, sheetId: activeSheet.sheetId, row }),
       });
       const data = await res.json();
       if (data.ok) { setSendStatus("ส่งสำเร็จ ✓"); setRowValues({}); }
