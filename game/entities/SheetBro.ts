@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { ATLAS } from '../scenes/MainScene';
 
 const INTERACT_DIST = 120;
 
@@ -6,9 +7,9 @@ export default class SheetBro extends Phaser.GameObjects.Sprite {
   private hint: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'sheet-bro-front1');
+    super(scene, x, y, ATLAS, 'sheet-bro/front1');
     scene.add.existing(this);
-    this.setScale(0.13).setDepth(10);
+    this.setScale(0.5).setDepth(10);
 
     this.hint = scene.add
       .text(x, y - 36, '[E] Talk', {
@@ -23,7 +24,10 @@ export default class SheetBro extends Phaser.GameObjects.Sprite {
 
     scene.anims.create({
       key: 'sheet-bro-idle',
-      frames: [{ key: 'sheet-bro-front1' }, { key: 'sheet-bro-front2' }],
+      frames: [
+        { key: ATLAS, frame: 'sheet-bro/front1' },
+        { key: ATLAS, frame: 'sheet-bro/front2' },
+      ],
       frameRate: 2,
       repeat: -1,
     });

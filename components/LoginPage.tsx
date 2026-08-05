@@ -341,7 +341,7 @@ export default function LoginPage({ onSuccess }: { onSuccess: () => void }) {
           {/* Banner */}
           <div className="login-banner">
             <img
-              src="/assets/dreamspace-banner.png"
+              src="/assets/dreamspace-banner.webp"
               alt="Dream Space"
               className="login-banner-img"
             />

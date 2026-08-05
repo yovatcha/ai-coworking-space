@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { BG_WIDTH, BG_HEIGHT } from '../scenes/MainScene';
+import { BG_WIDTH, BG_HEIGHT, ATLAS } from '../scenes/MainScene';
 
 const INTERACT_DIST = 100;
 const SPEED = 60;
@@ -18,9 +18,9 @@ export default class Rat extends Phaser.GameObjects.Sprite {
   private walkTimer?: Phaser.Time.TimerEvent;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'rat-front');
+    super(scene, x, y, ATLAS, 'rattatoiue/front1');
     scene.add.existing(this);
-    this.setScale(0.1); // ~50% of player scale (0.2)
+    this.setScale(0.5);
 
     this.hint = scene.add
       .text(x, y - 24, '[E] Talk', {

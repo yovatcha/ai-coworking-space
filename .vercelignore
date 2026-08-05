@@ -1,0 +1,3 @@
+# High-res source art. Only the optimized output in public/assets is served —
+# regenerate it with `npm run assets`.
+assets-src

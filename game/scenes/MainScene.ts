@@ -7,9 +7,14 @@ import Rat from '../entities/Rat';
 import GoogleBro from '../entities/GoogleBro';
 import SheetBro from '../entities/SheetBro';
 
-// bg.png is 2752x1536 — displayed at 75% size for a medium room
+// Sprites are stored at 2x their on-screen size (retina headroom) and drawn at
+// scale 0.5. bg.png is the exception: stored 1:1 at 2064x1152, drawn at scale 1.
 export const BG_WIDTH = 2064;
 export const BG_HEIGHT = 1152;
+
+// Single texture atlas holding every character + furniture frame.
+// Frame names mirror the source paths, e.g. 'ped/stand1'.
+export const ATLAS = 'atlas';
 
 export default class MainScene extends Phaser.Scene {
   private player!: Player;
@@ -40,64 +45,22 @@ export default class MainScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('bg', '/assets/bg.png');
-    this.load.image('exit-door', '/assets/furnitures/exit-door.png');
-    this.load.image('ped-stand1', '/assets/ped/stand1.png');
-    this.load.image('ped-stand2', '/assets/ped/stand2.png');
-    this.load.image('working-desk', '/assets/furnitures/working-desk.png');
-    this.load.image('google-bro-front1', '/assets/google-bro/front1.png');
-    this.load.image('google-bro-front2', '/assets/google-bro/fornt2.png');
-    this.load.image('sheet-bro-front1', '/assets/sheet-bro/front1.png');
-    this.load.image('sheet-bro-front2', '/assets/sheet-bro/front2.png');
-    this.load.image('front1', '/assets/main-charactor/front1.png');
+    // Every sprite and furniture frame lives in one texture; bg is too big to pack.
+    // Regenerate both with `npm run assets`.
+    this.load.image('bg', '/assets/bg.webp');
+    this.load.atlas(ATLAS, '/assets/atlas.webp', '/assets/atlas.json');
+  }
 
-    // down
-    this.load.image('arrowdown1', '/assets/main-charactor/arrowdown1.png');
-    this.load.image('arrowdown2', '/assets/main-charactor/arrowdown2.png');
-    this.load.image('arrowdown3', '/assets/main-charactor/arrowdown3.png');
-
-    // right
-    this.load.image('arrowright1', '/assets/main-charactor/arrowright1.png');
-    this.load.image('arrowright2', '/assets/main-charactor/arrowright2.png');
-    this.load.image('arrowright3', '/assets/main-charactor/arrowright3.png');
-    this.load.image('arrowright4', '/assets/main-charactor/arrowright4.png');
-
-    // left
-    this.load.image('arrowrleft1', '/assets/main-charactor/arrowrleft1.png');
-    this.load.image('arrowrleft2', '/assets/main-charactor/arrowrleft2.png');
-    this.load.image('arrowrleft3', '/assets/main-charactor/arrowrleft3.png');
-    this.load.image('arrowrleft4', '/assets/main-charactor/arrowrleft4.png');
-
-    // up
-    this.load.image('arrowup1', '/assets/main-charactor/arrowup1.png');
-    this.load.image('arrowup2', '/assets/main-charactor/arrowup2.png');
-    this.load.image('arrowup3', '/assets/main-charactor/arrowup3.png');
-    this.load.image('arrowup4', '/assets/main-charactor/arrowup4.png');
-
-    this.load.image('rat-front', '/assets/rattatoiue/front1.png');
-    this.load.image('rat-down1', '/assets/rattatoiue/arrowdown1.png');
-    this.load.image('rat-down2', '/assets/rattatoiue/arrowdown2.png');
-    this.load.image('rat-down3', '/assets/rattatoiue/arrowdown3.png');
-    this.load.image('rat-down4', '/assets/rattatoiue/arrowdown4.png');
-    this.load.image('rat-right1', '/assets/rattatoiue/arrowright1.png');
-    this.load.image('rat-right2', '/assets/rattatoiue/arrowright2.png');
-    this.load.image('rat-right3', '/assets/rattatoiue/arrowright3.png');
-    this.load.image('rat-right4', '/assets/rattatoiue/arrowright4.png');
-    this.load.image('rat-left1', '/assets/rattatoiue/arrowleft1.png');
-    this.load.image('rat-left2', '/assets/rattatoiue/arrowleft2.png');
-    this.load.image('rat-left3', '/assets/rattatoiue/arrowleft3.png');
-    this.load.image('rat-left4', '/assets/rattatoiue/arrowleft4.png');
-    this.load.image('rat-up1', '/assets/rattatoiue/arrowup1.png');
-    this.load.image('rat-up2', '/assets/rattatoiue/arrowup2.png');
-    this.load.image('rat-up3', '/assets/rattatoiue/arrowup3.png');
-    this.load.image('rat-up4', '/assets/rattatoiue/arrowup4.png');
+  /** Frames named `<prefix><start>`..`<prefix><end>` inside the atlas. */
+  private frames(prefix: string, start: number, end: number) {
+    return this.anims.generateFrameNames(ATLAS, { prefix, start, end });
   }
 
   create() {
-    this.add.image(BG_WIDTH / 2, BG_HEIGHT / 2, 'bg').setScale(0.75);
+    this.add.image(BG_WIDTH / 2, BG_HEIGHT / 2, 'bg');
 
     // Exit door — bottom-right of the room
-    this.doorImage = this.add.image(this.doorX, this.doorY, 'exit-door').setScale(0.22).setDepth(10);
+    this.doorImage = this.add.image(this.doorX, this.doorY, ATLAS, 'furnitures/exit-door').setScale(0.5).setDepth(10);
     this.doorHint = this.add
       .text(this.doorX, this.doorY - 80, '[E] Exit', {
         fontSize: '11px',
@@ -114,46 +77,27 @@ export default class MainScene extends Phaser.Scene {
     this.cameras.main.setZoom(1);
 
     // Animations
-    this.anims.create({
-      key: 'walk-down',
-      frames: [{ key: 'arrowdown1' }, { key: 'arrowdown2' }, { key: 'arrowdown3' }],
-      frameRate: 6,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: 'walk-right',
-      frames: [{ key: 'arrowright1' }, { key: 'arrowright2' }, { key: 'arrowright3' }, { key: 'arrowright4' }],
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: 'walk-left',
-      frames: [{ key: 'arrowrleft1' }, { key: 'arrowrleft2' }, { key: 'arrowrleft3' }, { key: 'arrowrleft4' }],
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: 'walk-up',
-      frames: [{ key: 'arrowup1' }, { key: 'arrowup2' }, { key: 'arrowup3' }, { key: 'arrowup4' }],
-      frameRate: 8,
-      repeat: -1,
-    });
+    const P = 'main-charactor/';
+    this.anims.create({ key: 'walk-down',  frames: this.frames(P + 'arrowdown', 1, 3),  frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'walk-right', frames: this.frames(P + 'arrowright', 1, 4), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'walk-left',  frames: this.frames(P + 'arrowrleft', 1, 4), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'walk-up',    frames: this.frames(P + 'arrowup', 1, 4),    frameRate: 8, repeat: -1 });
     this.anims.create({
       key: 'idle',
-      frames: [{ key: 'front1' }],
+      frames: [{ key: ATLAS, frame: P + 'front1' }],
       frameRate: 1,
     });
 
-    this.player = new Player(this, BG_WIDTH / 2, BG_HEIGHT / 2, 'front1');
+    this.player = new Player(this, BG_WIDTH / 2, BG_HEIGHT / 2);
 
     // Center camera on the room before following the player
     this.cameras.main.centerOn(BG_WIDTH / 2, BG_HEIGHT / 2);
     this.cameras.main.startFollow(this.player, true);
 
     // Working desk behind the secretary NPC
-    // NPC sprite is 1024px at scale 0.2 = ~205px wide
-    // Desk sprite is 2816px at scale 0.07 = ~197px wide, 1536px → ~107px tall
-    this.add.image(180, 175, 'working-desk').setScale(0.07).setDepth(10);
+    // NPC sprite is 410px at scale 0.5 = ~205px wide
+    // Desk sprite is 394x215 at scale 0.5 = ~197px wide, ~107px tall
+    this.add.image(180, 175, ATLAS, 'furnitures/working-desk').setScale(0.5).setDepth(10);
 
     // Collision rect for the desk (center x, center y, half-width, half-height)
     this.deskBounds = { cx: 180, cy: 175, hw: 98, hh: 30 };
@@ -168,11 +112,12 @@ export default class MainScene extends Phaser.Scene {
     this.sheetBro = new SheetBro(this, BG_WIDTH - 280, BG_HEIGHT / 2);
 
     // Rat animations
-    this.anims.create({ key: 'rat-idle', frames: [{ key: 'rat-front' }], frameRate: 1 });
-    this.anims.create({ key: 'rat-walk-down',  frames: [{ key: 'rat-down1' }, { key: 'rat-down2' }, { key: 'rat-down3' }, { key: 'rat-down4' }],  frameRate: 8, repeat: -1 });
-    this.anims.create({ key: 'rat-walk-right', frames: [{ key: 'rat-right1' }, { key: 'rat-right2' }, { key: 'rat-right3' }, { key: 'rat-right4' }], frameRate: 8, repeat: -1 });
-    this.anims.create({ key: 'rat-walk-left',  frames: [{ key: 'rat-left1' }, { key: 'rat-left2' }, { key: 'rat-left3' }, { key: 'rat-left4' }],  frameRate: 8, repeat: -1 });
-    this.anims.create({ key: 'rat-walk-up',    frames: [{ key: 'rat-up1' }, { key: 'rat-up2' }, { key: 'rat-up3' }, { key: 'rat-up4' }],    frameRate: 8, repeat: -1 });
+    const R = 'rattatoiue/';
+    this.anims.create({ key: 'rat-idle', frames: [{ key: ATLAS, frame: R + 'front1' }], frameRate: 1 });
+    this.anims.create({ key: 'rat-walk-down',  frames: this.frames(R + 'arrowdown', 1, 4),  frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'rat-walk-right', frames: this.frames(R + 'arrowright', 1, 4), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'rat-walk-left',  frames: this.frames(R + 'arrowleft', 1, 4),  frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'rat-walk-up',    frames: this.frames(R + 'arrowup', 1, 4),    frameRate: 8, repeat: -1 });
 
     // Rat — wanders around the room
     this.rat = new Rat(this, BG_WIDTH / 2 + 200, BG_HEIGHT / 2 + 100);

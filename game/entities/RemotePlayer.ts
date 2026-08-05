@@ -1,13 +1,14 @@
 import * as Phaser from 'phaser';
+import { ATLAS } from '../scenes/MainScene';
 
 export default class RemotePlayer extends Phaser.GameObjects.Sprite {
   private nameLabel: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, x: number, y: number, id: string) {
-    const textureKey = scene.textures.exists('front1') ? 'front1' : '__DEFAULT';
-    super(scene, x, y, textureKey);
+    const hasAtlas = scene.textures.exists(ATLAS);
+    super(scene, x, y, hasAtlas ? ATLAS : '__DEFAULT', hasAtlas ? 'main-charactor/front1' : undefined);
     scene.add.existing(this);
-    this.setScale(0.1);
+    this.setScale(0.5);
     // Tint remote players so they're visually distinct
     this.setTint(0x88ccff);
 

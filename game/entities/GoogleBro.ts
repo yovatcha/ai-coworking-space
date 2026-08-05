@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { ATLAS } from '../scenes/MainScene';
 
 const INTERACT_DIST = 120;
 
@@ -6,9 +7,9 @@ export default class GoogleBro extends Phaser.GameObjects.Sprite {
   private hint: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'google-bro-front1');
+    super(scene, x, y, ATLAS, 'google-bro/front1');
     scene.add.existing(this);
-    this.setScale(0.13).setDepth(10);
+    this.setScale(0.5).setDepth(10);
 
     this.hint = scene.add
       .text(x, y - 36, '[E] Talk', {
@@ -23,7 +24,11 @@ export default class GoogleBro extends Phaser.GameObjects.Sprite {
 
     scene.anims.create({
       key: 'google-bro-idle',
-      frames: [{ key: 'google-bro-front1' }, { key: 'google-bro-front2' }],
+      // 'fornt2' matches the source filename typo — see assets-src/google-bro/
+      frames: [
+        { key: ATLAS, frame: 'google-bro/front1' },
+        { key: ATLAS, frame: 'google-bro/fornt2' },
+      ],
       frameRate: 2,
       repeat: -1,
     });

@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { BG_WIDTH, BG_HEIGHT } from '../scenes/MainScene';
+import { BG_WIDTH, BG_HEIGHT, ATLAS } from '../scenes/MainScene';
 
 // Half-size of the player sprite used for boundary clamping
 const PLAYER_HALF = 24;
@@ -10,11 +10,11 @@ export default class Player extends Phaser.GameObjects.Sprite {
   private wasd: any;
   public currentAnim: string = 'idle';
 
-  constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
-    super(scene, x, y, texture);
+  constructor(scene: Phaser.Scene, x: number, y: number) {
+    super(scene, x, y, ATLAS, 'main-charactor/front1');
     scene.add.existing(this);
 
-    this.setScale(0.1);
+    this.setScale(0.5);
 
     if (scene.input.keyboard) {
       this.cursors = scene.input.keyboard.addKeys({

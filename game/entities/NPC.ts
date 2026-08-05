@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { ATLAS } from '../scenes/MainScene';
 
 const INTERACT_DIST = 120;
 
@@ -6,9 +7,9 @@ export default class NPC extends Phaser.GameObjects.Sprite {
   private hint: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'ped-stand1');
+    super(scene, x, y, ATLAS, 'ped/stand1');
     scene.add.existing(this);
-    this.setScale(0.2).setDepth(10);
+    this.setScale(0.5).setDepth(10);
 
     this.hint = scene.add
       .text(x, y - 36, '[E] Talk', {
@@ -23,7 +24,10 @@ export default class NPC extends Phaser.GameObjects.Sprite {
 
     scene.anims.create({
       key: 'ped-idle',
-      frames: [{ key: 'ped-stand1' }, { key: 'ped-stand2' }],
+      frames: [
+        { key: ATLAS, frame: 'ped/stand1' },
+        { key: ATLAS, frame: 'ped/stand2' },
+      ],
       frameRate: 2,
       repeat: -1,
     });
