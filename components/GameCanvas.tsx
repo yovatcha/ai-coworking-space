@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { getGameConfig } from "@/game/config";
 import ChatPanel from "./ChatPanel";
 import SheetBroPanel from "./SheetBroPanel";
+import SayBar from "./SayBar";
 import { logout, getUserId } from "./LoginPage";
 
 export default function GameCanvas() {
@@ -90,6 +91,9 @@ export default function GameCanvas() {
     >
       {/* Game always fills full screen */}
       <div ref={gameRef} className="w-full h-full" />
+
+      {/* Broadcast chat bar — hidden while an NPC panel occupies the same spot */}
+      {!chatOpen && !ratOpen && !googleBroOpen && !sheetBroOpen && !exitConfirm && <SayBar />}
 
       {/* Rat dialog bubble */}
       <AnimatePresence>

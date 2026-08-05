@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { BG_WIDTH, BG_HEIGHT, ATLAS } from '../scenes/MainScene';
+import SpeechBubble from './SpeechBubble';
 
 // Half-size of the player sprite used for boundary clamping
 const PLAYER_HALF = 24;
@@ -8,6 +9,7 @@ export default class Player extends Phaser.GameObjects.Sprite {
   private speed: number = 200;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   private wasd: any;
+  private bubble: SpeechBubble;
   public currentAnim: string = 'idle';
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
@@ -15,6 +17,7 @@ export default class Player extends Phaser.GameObjects.Sprite {
     scene.add.existing(this);
 
     this.setScale(0.5);
+    this.bubble = new SpeechBubble(scene);
 
     if (scene.input.keyboard) {
       this.cursors = scene.input.keyboard.addKeys({
@@ -78,5 +81,18 @@ export default class Player extends Phaser.GameObjects.Sprite {
       PLAYER_HALF,
       BG_HEIGHT - PLAYER_HALF
     );
+
+    this.bubble.follow(this.x, this.y);
+  }
+
+  /** Show a broadcast message above this player */
+  say(text: string) {
+    this.bubble.follow(this.x, this.y);
+    this.bubble.say(text);
+  }
+
+  destroy(fromScene?: boolean) {
+    this.bubble.destroy();
+    super.destroy(fromScene);
   }
 }

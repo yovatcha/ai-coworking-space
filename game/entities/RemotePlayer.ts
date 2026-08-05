@@ -1,8 +1,10 @@
 import * as Phaser from 'phaser';
 import { ATLAS } from '../scenes/MainScene';
+import SpeechBubble from './SpeechBubble';
 
 export default class RemotePlayer extends Phaser.GameObjects.Sprite {
   private nameLabel: Phaser.GameObjects.Text;
+  private bubble: SpeechBubble;
 
   constructor(scene: Phaser.Scene, x: number, y: number, id: string) {
     const hasAtlas = scene.textures.exists(ATLAS);
@@ -19,19 +21,30 @@ export default class RemotePlayer extends Phaser.GameObjects.Sprite {
       backgroundColor: '#00000088',
       padding: { x: 2, y: 1 },
     }).setOrigin(0.5, 1);
+
+    // Extra headroom so the balloon clears the name tag
+    this.bubble = new SpeechBubble(scene, 46);
+    this.bubble.follow(x, y);
   }
 
   applyState(x: number, y: number, anim: string) {
     this.x = x;
     this.y = y;
     this.nameLabel.setPosition(x, y - 20);
+    this.bubble.follow(x, y);
     // Only play if the animation key is registered (guards against race on init)
     if (anim && this.scene.anims.exists(anim)) {
       this.anims.play(anim, true);
     }
   }
 
+  /** Show a broadcast message above this player */
+  say(text: string) {
+    this.bubble.say(text);
+  }
+
   destroy(fromScene?: boolean) {
+    this.bubble.destroy();
     this.nameLabel.destroy();
     super.destroy(fromScene);
   }

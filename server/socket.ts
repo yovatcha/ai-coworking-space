@@ -49,6 +49,13 @@ export function initSocket(httpServer: HttpServer) {
       socket.broadcast.emit('playerMoved', { id: socket.id, ...data });
     });
 
+    // Broadcast chat — not stored, just relayed to everyone else
+    socket.on('chat', (raw: unknown) => {
+      const text = String(raw ?? '').trim().slice(0, 100);
+      if (!text) return;
+      socket.broadcast.emit('playerChat', { id: socket.id, text });
+    });
+
     socket.on('disconnect', () => {
       console.log(`[socket] disconnected: ${socket.id}`);
       players.delete(socket.id);

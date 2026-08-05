@@ -39,6 +39,8 @@ export default class MainScene extends Phaser.Scene {
   // announce ourselves once even if the player never moves
   private lastSent: { x: number; y: number; anim: string } | null = null;
   private chatOpen = false;
+  // True while the broadcast input at the bottom of the screen has focus
+  private sayOpen = false;
 
   constructor() {
     super({ key: 'MainScene' });
@@ -133,6 +135,24 @@ export default class MainScene extends Phaser.Scene {
 
     window.addEventListener('chat-opened', () => { this.chatOpen = true; });
     window.addEventListener('chat-closed', () => { this.chatOpen = false; });
+
+    // Broadcast chat from the bottom input bar
+    const onSayFocus = () => { this.sayOpen = true; };
+    const onSayBlur = () => { this.sayOpen = false; };
+    const onSay = (e: Event) => {
+      const text = (e as CustomEvent<string>).detail;
+      if (!text) return;
+      this.player.say(text);
+      this.socket?.emit('chat', text);
+    };
+    window.addEventListener('say-focus', onSayFocus);
+    window.addEventListener('say-blur', onSayBlur);
+    window.addEventListener('player-say', onSay);
+    this.events.once('shutdown', () => {
+      window.removeEventListener('say-focus', onSayFocus);
+      window.removeEventListener('say-blur', onSayBlur);
+      window.removeEventListener('player-say', onSay);
+    });
   }
 
   private setupSocket() {
@@ -185,6 +205,11 @@ export default class MainScene extends Phaser.Scene {
       }
     });
 
+    // Another player broadcast a message
+    this.socket.on('playerChat', ({ id, text }: { id: string; text: string }) => {
+      this.remotePlayers.get(id)?.say(text);
+    });
+
     // A player left
     this.socket.on('playerLeft', ({ id }: { id: string }) => {
       const remote = this.remotePlayers.get(id);
@@ -202,7 +227,11 @@ export default class MainScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number) {
-    if (!this.chatOpen) this.player.update(time, delta);
+    const typing = this.chatOpen || this.sayOpen;
+    if (!typing) this.player.update(time, delta);
+
+    // Always read the key so it doesn't stay "just down" until after typing ends
+    const pressE = Phaser.Input.Keyboard.JustDown(this.keyE) && !typing;
 
     // Depth sorting: player renders in front of door when below it, behind when above
     // Also sort against NPC/desk (y=175)
@@ -233,25 +262,25 @@ export default class MainScene extends Phaser.Scene {
 
     // NPC proximity + interaction
     const near = this.npc.updateProximity(this.player.x, this.player.y);
-    if (near && Phaser.Input.Keyboard.JustDown(this.keyE)) {
+    if (near && pressE) {
       this.npc.interact();
     }
 
     // Google Bro proximity + interaction
     const nearGoogleBro = this.googleBro.updateProximity(this.player.x, this.player.y);
-    if (nearGoogleBro && Phaser.Input.Keyboard.JustDown(this.keyE)) {
+    if (nearGoogleBro && pressE) {
       this.googleBro.interact();
     }
 
     // Sheet Bro proximity + interaction
     const nearSheetBro = this.sheetBro.updateProximity(this.player.x, this.player.y);
-    if (nearSheetBro && Phaser.Input.Keyboard.JustDown(this.keyE)) {
+    if (nearSheetBro && pressE) {
       this.sheetBro.interact();
     }
 
     // Rat proximity + interaction
     const nearRat = this.rat.updateProximity(this.player.x, this.player.y);
-    if (nearRat && Phaser.Input.Keyboard.JustDown(this.keyE)) {
+    if (nearRat && pressE) {
       this.rat.interact();
     }
 
@@ -262,7 +291,7 @@ export default class MainScene extends Phaser.Scene {
       this.player.x, this.player.y, this.doorX, this.doorY
     ) < this.DOOR_INTERACT_DIST;
     this.doorHint.setVisible(nearDoor);
-    if (nearDoor && Phaser.Input.Keyboard.JustDown(this.keyE)) {
+    if (nearDoor && pressE) {
       window.dispatchEvent(new CustomEvent('exit-door'));
     }
 
