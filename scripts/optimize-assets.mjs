@@ -25,12 +25,13 @@ const ATLAS_FILES = [
 // These are flat illustrations with no hard-edged sprite work, so lossy webp at
 // q95 is visually indistinguishable and roughly 12x smaller than lossless png.
 const STANDALONE = [
-  { file: 'bg.png',                width: 2064,  out: 'bg.webp',                quality: 95 },
+  // bg3 is authored 1:1 at 1920x1080 — same as BG_WIDTH/BG_HEIGHT in MainScene
+  { file: 'bg3.png',               width: 1920,  out: 'bg3.webp',               quality: 95 },
   { file: 'dreamspace-banner.png', height: 240,  out: 'dreamspace-banner.webp', quality: 95 },
 ];
 
 // Referenced by nothing in the codebase — kept in assets-src, dropped from public/
-const DEAD = ['bg1.png', 'lugia', 'furnitures/announcement-board.png', 'player.png'];
+const DEAD = ['bg.png', 'bg1.png', 'bg2.png', 'lugia', 'furnitures/announcement-board.png', 'player.png'];
 
 const ATLAS_MAX_WIDTH = 2048;  // stays well under the 4096 WebGL floor
 const PAD = 2;                 // transparent gutter so NEAREST filtering can't sample neighbours

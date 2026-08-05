@@ -10,9 +10,11 @@ import { resolveMember, resolveColor } from '@/lib/members';
 import { getMemberId, getColor } from '../identity';
 
 // Sprites are stored at 2x their on-screen size (retina headroom) and drawn at
-// scale 0.5. bg.png is the exception: stored 1:1 at 2064x1152, drawn at scale 1.
-export const BG_WIDTH = 2064;
-export const BG_HEIGHT = 1152;
+// scale 0.5. bg3.png is the exception: stored 1:1 at 1920x1080, drawn at scale 1.
+// These MUST match the bg3 output size in scripts/optimize-assets.mjs, otherwise
+// the world bounds and the drawn image drift apart.
+export const BG_WIDTH = 1920;
+export const BG_HEIGHT = 1080;
 
 // Single texture atlas holding every character + furniture frame.
 // Frame names mirror the source paths, e.g. 'ped/stand1'.
@@ -53,7 +55,7 @@ export default class MainScene extends Phaser.Scene {
   preload() {
     // Every sprite and furniture frame lives in one texture; bg is too big to pack.
     // Regenerate both with `npm run assets`.
-    this.load.image('bg', '/assets/bg.webp');
+    this.load.image('bg', '/assets/bg3.webp');
     this.load.atlas(ATLAS, '/assets/atlas.webp', '/assets/atlas.json');
   }
 
@@ -63,7 +65,8 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.image(BG_WIDTH / 2, BG_HEIGHT / 2, 'bg');
+    // Pinned to 0,0 and sized to the world so the map lines up 1:1 with the bounds
+    this.add.image(0, 0, 'bg').setOrigin(0, 0).setDisplaySize(BG_WIDTH, BG_HEIGHT);
 
     // Exit door — bottom-right of the room
     this.doorImage = this.add.image(this.doorX, this.doorY, ATLAS, 'furnitures/exit-door').setScale(0.5).setDepth(10);
