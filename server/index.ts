@@ -1,7 +1,7 @@
 import { createServer } from 'http';
 import { initSocket } from './socket';
 
-// Ensure stdout/stderr are not buffered so logs appear immediately in Railway
+// Ensure stdout/stderr are not buffered so logs appear immediately in Render
 if (process.stdout.isTTY === false) {
   process.stdout.write(''); // no-op flush nudge; Node streams are already line-buffered in non-TTY
 }
@@ -9,7 +9,7 @@ if (process.stdout.isTTY === false) {
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
 const httpServer = createServer((req, res) => {
-  // Health check for Railway
+  // Health check for Render
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('ok');
@@ -43,6 +43,6 @@ process.on('unhandledRejection', (reason, promise) => {
 // Catch-all for uncaught synchronous exceptions
 process.on('uncaughtException', (err) => {
   console.error('[server] Uncaught exception:', err);
-  // Re-exit so Railway can restart the container, but after logging
+  // Re-exit so Render can restart the container, but after logging
   process.exit(1);
 });

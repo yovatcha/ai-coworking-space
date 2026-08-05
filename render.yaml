@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: aicowork-socket
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build:backend
+    startCommand: npm run start:backend
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.0
+      - key: FRONTEND_URL
+        sync: false
