@@ -1,6 +1,12 @@
 # 0002 — Player avatars are selectable skins synced over the socket
 
-**Status:** Accepted — built. Registry in `game/skins.ts`.
+**Status:** Superseded by [0005](0005-fixed-roster-member-colors.md).
+
+> Built and then replaced within a day. The room turned out to have a known,
+> fixed roster of six people, which makes identity a matter of *who you are*
+> rather than *which sprite you picked* — so everyone shares one character and
+> is told apart by colour. `game/skins.ts` is deleted. What follows is kept for
+> the reasoning, not as a description of the code.
 
 ## Context
 

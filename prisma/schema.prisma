@@ -19,6 +19,12 @@ model ChatMessage {
   createdAt DateTime @default(now())
 }
 
+model MemberColor {
+  memberId  String   @id
+  color     String
+  updatedAt DateTime @updatedAt
+}
+
 model SheetEntry {
   id        Int      @id @default(autoincrement())
   userId    String

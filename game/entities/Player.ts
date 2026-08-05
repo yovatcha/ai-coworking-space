@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { BG_WIDTH, BG_HEIGHT, ATLAS } from '../scenes/MainScene';
-import { SKINS, DEFAULT_SKIN, animKey } from '../skins';
+import { toTint } from '@/lib/members';
 import SpeechBubble from './SpeechBubble';
 
 // Half-size of the player sprite used for boundary clamping
@@ -11,16 +11,14 @@ export default class Player extends Phaser.GameObjects.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   private wasd: any;
   private bubble: SpeechBubble;
-  public readonly skinId: string;
-  public currentAnim: string;
+  public currentAnim: string = 'idle';
 
-  constructor(scene: Phaser.Scene, x: number, y: number, skinId: string = DEFAULT_SKIN) {
-    super(scene, x, y, ATLAS, SKINS[skinId].idle);
+  constructor(scene: Phaser.Scene, x: number, y: number, color: string) {
+    super(scene, x, y, ATLAS, 'main-charactor/front1');
     scene.add.existing(this);
 
-    this.skinId = skinId;
-    this.currentAnim = animKey(skinId, 'idle');
     this.setScale(0.5);
+    this.setTint(toTint(color));
     this.bubble = new SpeechBubble(scene);
 
     if (scene.input.keyboard) {
@@ -54,13 +52,12 @@ export default class Player extends Phaser.GameObjects.Sprite {
       dy /= len;
     }
 
-    // Animation — key is namespaced by skin so remote clients replay it as-is
-    const name =
+    // Animation
+    const key =
       dx < 0 ? 'walk-left' :
       dx > 0 ? 'walk-right' :
       dy < 0 ? 'walk-up' :
       dy > 0 ? 'walk-down' : 'idle';
-    const key = animKey(this.skinId, name);
     try {
       if (this.scene.anims.exists(key)) this.anims.play(key, true);
       this.currentAnim = key;
@@ -79,6 +76,11 @@ export default class Player extends Phaser.GameObjects.Sprite {
     );
 
     this.bubble.follow(this.x, this.y);
+  }
+
+  /** Repaint when the member picks a new colour mid-session */
+  setColor(color: string) {
+    this.setTint(toTint(color));
   }
 
   /** Show a broadcast message above this player */

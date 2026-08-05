@@ -7,9 +7,10 @@ area — it saves rediscovering the asset pipeline or the event wiring every tim
 | # | Decision | Status |
 |---|----------|--------|
 | [0001](0001-asset-pipeline-texture-atlas.md) | Sprites go through `assets-src/` → texture atlas | Accepted |
-| [0002](0002-player-avatar-skins.md) | Player avatars are selectable skins synced over socket | Accepted |
+| [0002](0002-player-avatar-skins.md) | Player avatars are selectable skins synced over socket | Superseded by 0005 |
 | [0003](0003-npc-agent-pattern.md) | Every AI agent = entity + window event + panel + system prompt | Accepted |
 | [0004](0004-furniture-collision.md) | Furniture collision is a hand-placed AABB in `MainScene.update()` | Accepted |
+| [0005](0005-fixed-roster-member-colors.md) | Fixed roster of six members, told apart by colour tint | Accepted |
 
 ## Format
 

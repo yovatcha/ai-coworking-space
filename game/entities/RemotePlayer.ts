@@ -1,22 +1,25 @@
 import * as Phaser from 'phaser';
 import { ATLAS } from '../scenes/MainScene';
-import { SKINS, DEFAULT_SKIN } from '../skins';
+import { MEMBERS, GUEST, toTint } from '@/lib/members';
 import SpeechBubble from './SpeechBubble';
 
 export default class RemotePlayer extends Phaser.GameObjects.Sprite {
   private nameLabel: Phaser.GameObjects.Text;
   private bubble: SpeechBubble;
-  private skinId: string;
+  private memberId: string;
+  private color: string;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, id: string, skinId: string = DEFAULT_SKIN) {
+  constructor(scene: Phaser.Scene, x: number, y: number, memberId: string, color: string) {
     const hasAtlas = scene.textures.exists(ATLAS);
-    super(scene, x, y, hasAtlas ? ATLAS : '__DEFAULT', hasAtlas ? SKINS[skinId].idle : undefined);
+    super(scene, x, y, hasAtlas ? ATLAS : '__DEFAULT', hasAtlas ? 'main-charactor/front1' : undefined);
     scene.add.existing(this);
-    this.skinId = skinId;
+    this.memberId = memberId;
+    this.color = color;
     this.setScale(0.5);
+    this.setTint(toTint(color));
 
-    // Small name tag above the sprite
-    this.nameLabel = scene.add.text(x, y - 20, id.slice(0, 6), {
+    // Name tag above the sprite — the member's name, not a socket id
+    this.nameLabel = scene.add.text(x, y - 20, this.labelFor(memberId), {
       fontSize: '10px',
       color: '#ffffff',
       backgroundColor: '#00000088',
@@ -28,13 +31,20 @@ export default class RemotePlayer extends Phaser.GameObjects.Sprite {
     this.bubble.follow(x, y);
   }
 
-  /** Swap sprite when a player changes skin mid-session. */
-  setSkin(skinId: string) {
-    if (skinId === this.skinId) return;
-    this.skinId = skinId;
-    if (this.scene.textures.exists(ATLAS)) {
-      this.anims.stop();
-      this.setTexture(ATLAS, SKINS[skinId].idle);
+  private labelFor(memberId: string) {
+    return (MEMBERS[memberId] ?? MEMBERS[GUEST]).label;
+  }
+
+  /** Two people can share a member slot only by sharing a password — but a
+   *  colour change mid-session is normal, so keep both in sync. */
+  setIdentity(memberId: string, color: string) {
+    if (memberId !== this.memberId) {
+      this.memberId = memberId;
+      this.nameLabel.setText(this.labelFor(memberId));
+    }
+    if (color !== this.color) {
+      this.color = color;
+      this.setTint(toTint(color));
     }
   }
 

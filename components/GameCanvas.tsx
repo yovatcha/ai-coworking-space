@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import * as Phaser from "phaser";
 import { AnimatePresence, motion } from "framer-motion";
 import { getGameConfig } from "@/game/config";
+import { MEMBERS, PALETTE, GUEST } from "@/lib/members";
+import { getMemberId, getColor, saveColor } from "@/game/identity";
 import ChatPanel from "./ChatPanel";
 import SheetBroPanel from "./SheetBroPanel";
 import SayBar from "./SayBar";
@@ -19,11 +21,30 @@ export default function GameCanvas() {
   const [sheetBroOpen, setSheetBroOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
   const [userId, setUserId] = useState("");
+  // Read after mount — localStorage is unavailable during SSR
+  const [member, setMember] = useState(GUEST);
+  const [color, setColor] = useState(MEMBERS[GUEST].defaultColor);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   useEffect(() => {
     setUserId(getUserId());
+    const id = getMemberId();
+    setMember(id);
+    setColor(getColor(id));
   }, []);
+
+  const pickColor = async (next: string) => {
+    setColor(next);
+    setSaveFailed(false);
+    // Repaint the sprite immediately; the next socket emit carries the change
+    window.dispatchEvent(new CustomEvent("player-color", { detail: next }));
+    const ok = await saveColor(member, next);
+    if (!ok) setSaveFailed(true);
+  };
+
+  const canChangeColor = MEMBERS[member]?.canChangeColor ?? false;
 
   useEffect(() => {
     if (typeof window === "undefined" || !gameRef.current) return;
@@ -374,6 +395,102 @@ export default function GameCanvas() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Colour picker */}
+      <AnimatePresence>
+        {colorOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.92 }}
+            transition={{ duration: 0.12 }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.55)",
+              zIndex: 200,
+            }}
+          >
+            <div
+              style={{
+                background: "#16213e",
+                border: "4px solid #4f8ef7",
+                boxShadow: "-4px -4px 0 0 #8faabb, 4px 4px 0 0 #0d0f1a, 6px 6px 0 0 #000",
+                fontFamily: "'Press Start 2P', monospace",
+                width: 320,
+                maxWidth: "calc(100vw - 2rem)",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ background: "#0d0f1a", borderBottom: "4px solid #000", padding: "10px 14px" }}>
+                <span style={{ fontSize: 9, color: "#e8f4fd", textShadow: "2px 2px 0 #000", letterSpacing: "0.05em" }}>
+                  {MEMBERS[member]?.label ?? ""} — COLOR
+                </span>
+              </div>
+
+              <div
+                style={{
+                  padding: "16px 14px",
+                  background: "#1a1c2c",
+                  backgroundImage: "radial-gradient(circle, #2a2d3e 1px, transparent 1px)",
+                  backgroundSize: "12px 12px",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 8,
+                }}
+              >
+                {PALETTE.map((swatch) => (
+                  <button
+                    key={swatch.color}
+                    title={swatch.label}
+                    onClick={() => pickColor(swatch.color)}
+                    style={{
+                      height: 44,
+                      background: swatch.color,
+                      border: `3px solid ${color === swatch.color ? "#ffffff" : "#0d0f1a"}`,
+                      boxShadow: color === swatch.color
+                        ? "0 0 0 3px #4f8ef7, 3px 3px 0 #000"
+                        : "3px 3px 0 #000",
+                      cursor: "pointer",
+                    }}
+                  />
+                ))}
+              </div>
+
+              {saveFailed && (
+                <div style={{ padding: "0 14px 12px", background: "#1a1c2c" }}>
+                  <span style={{ fontSize: 7, color: "#e74c3c", textShadow: "1px 1px 0 #000" }}>
+                    SAVE FAILED — COLOR APPLIED LOCALLY ONLY
+                  </span>
+                </div>
+              )}
+
+              <div style={{ padding: "10px 12px", background: "#0d0f1a", borderTop: "4px solid #000" }}>
+                <button
+                  onClick={() => setColorOpen(false)}
+                  style={{
+                    width: "100%",
+                    padding: "10px 0",
+                    fontFamily: "'Press Start 2P', monospace",
+                    fontSize: 8,
+                    letterSpacing: "0.05em",
+                    background: "#4f8ef7",
+                    color: "#000",
+                    border: "3px solid #88aaff",
+                    boxShadow: "3px 3px 0 #000",
+                    cursor: "pointer",
+                  }}
+                >
+                  DONE
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Exit confirmation dialog */}
       <AnimatePresence>
         {exitConfirm && (
@@ -488,6 +605,34 @@ export default function GameCanvas() {
                 overflow: "hidden",
               }}
             >
+              {/* Guest is a shared account — its colour is fixed */}
+              {canChangeColor && (
+                <button
+                  onClick={() => { setSettingsOpen(false); setColorOpen(true); }}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    fontFamily: "'Press Start 2P', monospace",
+                    fontSize: 8,
+                    color: "#88aaff",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: "2px solid #0d0f1a",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    letterSpacing: "0.05em",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = "#1a2a4a")}
+                  onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span style={{ width: 10, height: 10, background: color, border: "2px solid #000", flexShrink: 0 }} />
+                  COLOR
+                </button>
+              )}
+
               <button
                 onClick={() => { setSettingsOpen(false); setExitConfirm(true); }}
                 style={{

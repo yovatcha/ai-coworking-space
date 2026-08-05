@@ -12,7 +12,7 @@
 | Task | ADR |
 |------|-----|
 | Adding any sprite / image / art | `docs/adr/0001-asset-pipeline-texture-atlas.md` |
-| Adding a player avatar skin | `docs/adr/0002-player-avatar-skins.md` |
+| Adding a member or player colour | `docs/adr/0005-fixed-roster-member-colors.md` |
 | Adding an AI agent / NPC | `docs/adr/0003-npc-agent-pattern.md` |
 | Adding furniture or collision | `docs/adr/0004-furniture-collision.md` |
 

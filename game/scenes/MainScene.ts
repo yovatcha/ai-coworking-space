@@ -6,7 +6,8 @@ import NPC from '../entities/NPC';
 import Rat from '../entities/Rat';
 import GoogleBro from '../entities/GoogleBro';
 import SheetBro from '../entities/SheetBro';
-import { SKINS, animKey, getSkinId, resolveSkin, type Dir } from '../skins';
+import { resolveMember, resolveColor } from '@/lib/members';
+import { getMemberId, getColor } from '../identity';
 
 // Sprites are stored at 2x their on-screen size (retina headroom) and drawn at
 // scale 0.5. bg.png is the exception: stored 1:1 at 2064x1152, drawn at scale 1.
@@ -38,8 +39,9 @@ export default class MainScene extends Phaser.Scene {
   private readonly EMIT_INTERVAL = 50; // ~20 updates/sec
   // Last state actually sent — null until the first emit, so we always
   // announce ourselves once even if the player never moves
-  private lastSent: { x: number; y: number; anim: string; skin: string } | null = null;
-  private skinId!: string;
+  private lastSent: { x: number; y: number; anim: string; member: string; color: string } | null = null;
+  private memberId!: string;
+  private color!: string;
   private chatOpen = false;
   // True while the broadcast input at the bottom of the screen has focus
   private sayOpen = false;
@@ -80,26 +82,22 @@ export default class MainScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, BG_WIDTH, BG_HEIGHT);
     this.cameras.main.setZoom(1);
 
-    // Player animations — every skin registers up front (5 keys each, cheap),
-    // namespaced so a remote player in another skin replays its key directly.
-    for (const [skinId, skin] of Object.entries(SKINS)) {
-      this.anims.create({
-        key: animKey(skinId, 'idle'),
-        frames: [{ key: ATLAS, frame: skin.idle }],
-        frameRate: 1,
-      });
-      for (const [dir, walk] of Object.entries(skin.walk)) {
-        this.anims.create({
-          key: animKey(skinId, `walk-${dir as Dir}`),
-          frames: this.frames(walk.prefix, walk.start, walk.end),
-          frameRate: walk.frameRate,
-          repeat: -1,
-        });
-      }
-    }
+    // Animations — one shared set; everyone uses the same character art and is
+    // told apart by tint colour (see docs/adr/0005-fixed-roster-member-colors.md)
+    const P = 'main-charactor/';
+    this.anims.create({ key: 'walk-down',  frames: this.frames(P + 'arrowdown', 1, 3),  frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'walk-right', frames: this.frames(P + 'arrowright', 1, 4), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'walk-left',  frames: this.frames(P + 'arrowrleft', 1, 4), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'walk-up',    frames: this.frames(P + 'arrowup', 1, 4),    frameRate: 8, repeat: -1 });
+    this.anims.create({
+      key: 'idle',
+      frames: [{ key: ATLAS, frame: P + 'front1' }],
+      frameRate: 1,
+    });
 
-    this.skinId = getSkinId();
-    this.player = new Player(this, BG_WIDTH / 2, BG_HEIGHT / 2, this.skinId);
+    this.memberId = getMemberId();
+    this.color = getColor(this.memberId);
+    this.player = new Player(this, BG_WIDTH / 2, BG_HEIGHT / 2, this.color);
 
     // Center camera on the room before following the player
     this.cameras.main.centerOn(BG_WIDTH / 2, BG_HEIGHT / 2);
@@ -154,13 +152,22 @@ export default class MainScene extends Phaser.Scene {
       this.player.say(text);
       this.socket?.emit('chat', text);
     };
+    // Colour picked in the settings menu — repaint now, the next emit carries it
+    const onColor = (e: Event) => {
+      const color = resolveColor((e as CustomEvent<string>).detail, this.memberId);
+      this.color = color;
+      this.player.setColor(color);
+    };
+
     window.addEventListener('say-focus', onSayFocus);
     window.addEventListener('say-blur', onSayBlur);
     window.addEventListener('player-say', onSay);
+    window.addEventListener('player-color', onColor);
     this.events.once('shutdown', () => {
       window.removeEventListener('say-focus', onSayFocus);
       window.removeEventListener('say-blur', onSayBlur);
       window.removeEventListener('player-say', onSay);
+      window.removeEventListener('player-color', onColor);
     });
   }
 
@@ -186,12 +193,12 @@ export default class MainScene extends Phaser.Scene {
     // Receive own ID + snapshot of existing players
     this.socket.on('init', ({ selfId, others }: {
       selfId: string;
-      others: Record<string, { x: number; y: number; anim: string; skin?: string }>;
+      others: Record<string, { x: number; y: number; anim: string; member?: string; color?: string }>;
     }) => {
       console.log('[socket] my id:', selfId, '| others:', Object.keys(others));
       Object.entries(others).forEach(([id, state]) => {
         if (!this.remotePlayers.has(id)) {
-          this.addRemotePlayer(id, state.x, state.y, state.anim, state.skin);
+          this.addRemotePlayer(id, state.x, state.y, state.anim, state.member, state.color);
         }
       });
     });
@@ -199,22 +206,23 @@ export default class MainScene extends Phaser.Scene {
     // A new player joined — will be positioned properly once they send their first move
     this.socket.on('playerJoined', ({ id }: { id: string }) => {
       if (!this.remotePlayers.has(id)) {
-        // Skin is unknown until their first move; the default stands in until then
+        // Identity is unknown until their first move; guest stands in until then
         this.addRemotePlayer(id, BG_WIDTH / 2, BG_HEIGHT / 2, '');
       }
     });
 
     // Another player moved
-    this.socket.on('playerMoved', ({ id, x, y, anim, skin }: {
-      id: string; x: number; y: number; anim: string; skin?: string;
+    this.socket.on('playerMoved', ({ id, x, y, anim, member, color }: {
+      id: string; x: number; y: number; anim: string; member?: string; color?: string;
     }) => {
       if (id === this.socket.id) return; // ignore own echoes
       const remote = this.remotePlayers.get(id);
       if (remote) {
-        remote.setSkin(resolveSkin(skin));
+        const m = resolveMember(member);
+        remote.setIdentity(m, resolveColor(color, m));
         remote.applyState(x, y, anim);
       } else {
-        this.addRemotePlayer(id, x, y, anim, skin);
+        this.addRemotePlayer(id, x, y, anim, member, color);
       }
     });
 
@@ -233,8 +241,9 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
-  private addRemotePlayer(id: string, x: number, y: number, anim: string, skin?: string) {
-    const rp = new RemotePlayer(this, x, y, id, resolveSkin(skin));
+  private addRemotePlayer(id: string, x: number, y: number, anim: string, member?: string, color?: string) {
+    const m = resolveMember(member);
+    const rp = new RemotePlayer(this, x, y, m, resolveColor(color, m));
     rp.applyState(x, y, anim);
     this.remotePlayers.set(id, rp);
   }
@@ -315,11 +324,13 @@ export default class MainScene extends Phaser.Scene {
       const next = {
         x: Math.round(this.player.x),
         y: Math.round(this.player.y),
-        anim: this.player.currentAnim,
-        skin: this.skinId,
+        anim: this.player.currentAnim ?? 'idle',
+        member: this.memberId,
+        color: this.color,
       };
       const prev = this.lastSent;
-      if (!prev || prev.x !== next.x || prev.y !== next.y || prev.anim !== next.anim || prev.skin !== next.skin) {
+      if (!prev || prev.x !== next.x || prev.y !== next.y || prev.anim !== next.anim
+          || prev.member !== next.member || prev.color !== next.color) {
         this.lastSent = next;
         this.socket.emit('move', next);
       }
