@@ -196,7 +196,8 @@ Focus:
 ## ⚠️ Constraints
 
 * Frontend must run on Vercel
-* Backend runs on Railway
+* Socket.IO backend runs on Render
+* Postgres is hosted on Supabase (accessed via Prisma only — no Supabase client/auth)
 * WebSocket must NOT be on Vercel
 
 ---
