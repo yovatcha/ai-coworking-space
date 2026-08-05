@@ -30,6 +30,9 @@ export default class MainScene extends Phaser.Scene {
   // Throttle how often we emit position (ms)
   private lastEmit = 0;
   private readonly EMIT_INTERVAL = 50; // ~20 updates/sec
+  // Last state actually sent — null until the first emit, so we always
+  // announce ourselves once even if the player never moves
+  private lastSent: { x: number; y: number; anim: string } | null = null;
   private chatOpen = false;
 
   constructor() {
@@ -197,6 +200,9 @@ export default class MainScene extends Phaser.Scene {
 
     this.socket.on('connect', () => {
       console.log('[socket] connected as', this.socket.id);
+      // Reconnects get a fresh socket id and empty server-side state,
+      // so forget what we sent and re-announce on the next tick
+      this.lastSent = null;
     });
 
     this.socket.on('connect_error', (err) => {
@@ -315,14 +321,20 @@ export default class MainScene extends Phaser.Scene {
       window.dispatchEvent(new CustomEvent('exit-door'));
     }
 
-    // Throttled position emit
+    // Throttled position emit — skipped entirely while nothing changed
     if (time - this.lastEmit > this.EMIT_INTERVAL) {
       this.lastEmit = time;
-      this.socket.emit('move', {
-        x: this.player.x,
-        y: this.player.y,
+      // Round to whole pixels: sub-pixel drift is invisible to remote players
+      const next = {
+        x: Math.round(this.player.x),
+        y: Math.round(this.player.y),
         anim: this.player.currentAnim ?? 'idle',
-      });
+      };
+      const prev = this.lastSent;
+      if (!prev || prev.x !== next.x || prev.y !== next.y || prev.anim !== next.anim) {
+        this.lastSent = next;
+        this.socket.emit('move', next);
+      }
     }
   }
 }
