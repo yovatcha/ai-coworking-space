@@ -1,5 +1,5 @@
 import { createServer } from 'http';
-import { initSocket } from './socket';
+import { initSocket } from './socket.js';
 // Ensure stdout/stderr are not buffered so logs appear immediately in Render
 if (process.stdout.isTTY === false) {
     process.stdout.write(''); // no-op flush nudge; Node streams are already line-buffered in non-TTY

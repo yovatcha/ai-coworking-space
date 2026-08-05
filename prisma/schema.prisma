@@ -4,9 +4,9 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  // Neon pooled connection (used at runtime)
+  // Supabase transaction pooler, port 6543 (used at runtime)
   url       = env("DATABASE_URL")
-  // Neon direct connection (used by `prisma migrate`)
+  // Supabase session pooler, port 5432 (used by `prisma migrate`)
   directUrl = env("DIRECT_URL")
 }
 
