@@ -5,7 +5,16 @@ interface PlayerState {
   x: number;
   y: number;
   anim: string;
+  skin: string;
 }
+
+// The skin registry lives in game/skins.ts, which this service cannot import
+// (tsconfig.server.json is rooted at server/). So the server only sanitises the
+// id — clients resolve an unknown skin to their default, the same way an
+// unknown `anim` is already dropped by RemotePlayer's anims.exists() guard.
+const SKIN_PATTERN = /^[a-z0-9-]{1,32}$/;
+const sanitizeSkin = (raw: unknown) =>
+  typeof raw === 'string' && SKIN_PATTERN.test(raw) ? raw : '';
 
 export function initSocket(httpServer: HttpServer) {
   const allowedOrigin = process.env.FRONTEND_URL || '*';
@@ -45,8 +54,9 @@ export function initSocket(httpServer: HttpServer) {
 
     // Player sends position each frame
     socket.on('move', (data: PlayerState) => {
-      players.set(socket.id, data);
-      socket.broadcast.emit('playerMoved', { id: socket.id, ...data });
+      const state: PlayerState = { ...data, skin: sanitizeSkin(data?.skin) };
+      players.set(socket.id, state);
+      socket.broadcast.emit('playerMoved', { id: socket.id, ...state });
     });
 
     // Broadcast chat — not stored, just relayed to everyone else

@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { BG_WIDTH, BG_HEIGHT, ATLAS } from '../scenes/MainScene';
+import { SKINS, DEFAULT_SKIN, animKey } from '../skins';
 import SpeechBubble from './SpeechBubble';
 
 // Half-size of the player sprite used for boundary clamping
@@ -10,12 +11,15 @@ export default class Player extends Phaser.GameObjects.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   private wasd: any;
   private bubble: SpeechBubble;
-  public currentAnim: string = 'idle';
+  public readonly skinId: string;
+  public currentAnim: string;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, ATLAS, 'main-charactor/front1');
+  constructor(scene: Phaser.Scene, x: number, y: number, skinId: string = DEFAULT_SKIN) {
+    super(scene, x, y, ATLAS, SKINS[skinId].idle);
     scene.add.existing(this);
 
+    this.skinId = skinId;
+    this.currentAnim = animKey(skinId, 'idle');
     this.setScale(0.5);
     this.bubble = new SpeechBubble(scene);
 
@@ -50,24 +54,16 @@ export default class Player extends Phaser.GameObjects.Sprite {
       dy /= len;
     }
 
-    // Animation
+    // Animation — key is namespaced by skin so remote clients replay it as-is
+    const name =
+      dx < 0 ? 'walk-left' :
+      dx > 0 ? 'walk-right' :
+      dy < 0 ? 'walk-up' :
+      dy > 0 ? 'walk-down' : 'idle';
+    const key = animKey(this.skinId, name);
     try {
-      if (dx < 0) {
-        if (this.scene.anims.exists('walk-left')) this.anims.play('walk-left', true);
-        this.currentAnim = 'walk-left';
-      } else if (dx > 0) {
-        if (this.scene.anims.exists('walk-right')) this.anims.play('walk-right', true);
-        this.currentAnim = 'walk-right';
-      } else if (dy < 0) {
-        if (this.scene.anims.exists('walk-up')) this.anims.play('walk-up', true);
-        this.currentAnim = 'walk-up';
-      } else if (dy > 0) {
-        if (this.scene.anims.exists('walk-down')) this.anims.play('walk-down', true);
-        this.currentAnim = 'walk-down';
-      } else {
-        if (this.scene.anims.exists('idle')) this.anims.play('idle', true);
-        this.currentAnim = 'idle';
-      }
+      if (this.scene.anims.exists(key)) this.anims.play(key, true);
+      this.currentAnim = key;
     } catch { /* scene tearing down */ }
 
     // Move and clamp to bg bounds

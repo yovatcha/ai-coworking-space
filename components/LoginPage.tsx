@@ -1,9 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { SKINS, SKIN_IDS, DEFAULT_SKIN, getSkinId, setSkinId } from "@/game/skins";
 
 const SESSION_KEY = "cowork_auth";
 const USER_ID_KEY = "cowork_user_id";
+
+/**
+ * Draws one atlas frame in the DOM. Frame coordinates are read from
+ * atlas.json at runtime rather than hardcoded, because the packer reflows
+ * every frame on each `npm run assets`.
+ */
+function SkinPreview({ frame, size = 56 }: { frame: string; size?: number }) {
+  const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/assets/atlas.json")
+      .then((r) => r.json())
+      .then((atlas) => { if (alive) setBox(atlas?.frames?.[frame]?.frame ?? null); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [frame]);
+
+  if (!box) return <div style={{ width: size, height: size }} />;
+
+  const scale = size / Math.max(box.w, box.h);
+  return (
+    <div style={{ width: size, height: size, position: "relative", overflow: "hidden" }}>
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: box.w,
+          height: box.h,
+          marginLeft: -box.w / 2,
+          marginTop: -box.h / 2,
+          transform: `scale(${scale})`,
+          backgroundImage: "url(/assets/atlas.webp)",
+          backgroundPosition: `-${box.x}px -${box.y}px`,
+          imageRendering: "pixelated",
+        }}
+      />
+    </div>
+  );
+}
 
 export function isAuthenticated() {
   if (typeof window === "undefined") return false;
@@ -28,6 +70,15 @@ export default function LoginPage({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Read after mount — localStorage is unavailable during SSR
+  const [skin, setSkin] = useState(DEFAULT_SKIN);
+
+  useEffect(() => { setSkin(getSkinId()); }, []);
+
+  const pickSkin = (id: string) => {
+    setSkin(id);
+    setSkinId(id);
+  };
 
   const submit = async () => {
     if (!password || loading) return;
@@ -41,6 +92,7 @@ export default function LoginPage({ onSuccess }: { onSuccess: () => void }) {
       });
       if (res.ok) {
         localStorage.setItem(SESSION_KEY, "true");
+        setSkinId(skin);
         onSuccess();
       } else {
         setError(true);
@@ -219,6 +271,39 @@ export default function LoginPage({ onSuccess }: { onSuccess: () => void }) {
           margin: 0;
         }
 
+        /* ── Skin picker ── */
+        .skin-row {
+          display: flex;
+          gap: 8px;
+          justify-content: center;
+        }
+        .skin-btn {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 4px;
+          background: #050510;
+          border: 3px solid #2a3a6a;
+          box-shadow: inset 2px 2px 0 #000, 3px 3px 0 #000;
+          cursor: pointer;
+        }
+        .skin-btn:hover { border-color: #4f8ef7; }
+        .skin-btn.selected {
+          background: #0d1a3a;
+          border-color: #4f8ef7;
+          box-shadow: inset 2px 2px 0 #000, 3px 3px 0 #000, 0 0 0 3px rgba(79,142,247,0.2);
+        }
+        .skin-name {
+          font-family: 'Press Start 2P', monospace;
+          font-size: 6px;
+          letter-spacing: 0.05em;
+          color: #2a3a6a;
+          text-shadow: 1px 1px 0 #000;
+        }
+        .skin-btn.selected .skin-name { color: #88aaff; }
+
         /* ── Input ── */
         .login-input-wrap { position: relative; }
         .login-input {
@@ -361,6 +446,22 @@ export default function LoginPage({ onSuccess }: { onSuccess: () => void }) {
 
           {/* Body */}
           <div className="login-body">
+            <p className="login-label">CHOOSE AVATAR</p>
+
+            <div className="skin-row">
+              {SKIN_IDS.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => pickSkin(id)}
+                  className={`skin-btn ${skin === id ? "selected" : ""}`}
+                >
+                  <SkinPreview frame={SKINS[id].idle} />
+                  <span className="skin-name">{SKINS[id].label}</span>
+                </button>
+              ))}
+            </div>
+
             <p className="login-label">ENTER PASSWORD</p>
 
             {/* Input */}

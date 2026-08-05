@@ -1,18 +1,19 @@
 import * as Phaser from 'phaser';
 import { ATLAS } from '../scenes/MainScene';
+import { SKINS, DEFAULT_SKIN } from '../skins';
 import SpeechBubble from './SpeechBubble';
 
 export default class RemotePlayer extends Phaser.GameObjects.Sprite {
   private nameLabel: Phaser.GameObjects.Text;
   private bubble: SpeechBubble;
+  private skinId: string;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, id: string) {
+  constructor(scene: Phaser.Scene, x: number, y: number, id: string, skinId: string = DEFAULT_SKIN) {
     const hasAtlas = scene.textures.exists(ATLAS);
-    super(scene, x, y, hasAtlas ? ATLAS : '__DEFAULT', hasAtlas ? 'main-charactor/front1' : undefined);
+    super(scene, x, y, hasAtlas ? ATLAS : '__DEFAULT', hasAtlas ? SKINS[skinId].idle : undefined);
     scene.add.existing(this);
+    this.skinId = skinId;
     this.setScale(0.5);
-    // Tint remote players so they're visually distinct
-    this.setTint(0x88ccff);
 
     // Small name tag above the sprite
     this.nameLabel = scene.add.text(x, y - 20, id.slice(0, 6), {
@@ -25,6 +26,16 @@ export default class RemotePlayer extends Phaser.GameObjects.Sprite {
     // Extra headroom so the balloon clears the name tag
     this.bubble = new SpeechBubble(scene, 46);
     this.bubble.follow(x, y);
+  }
+
+  /** Swap sprite when a player changes skin mid-session. */
+  setSkin(skinId: string) {
+    if (skinId === this.skinId) return;
+    this.skinId = skinId;
+    if (this.scene.textures.exists(ATLAS)) {
+      this.anims.stop();
+      this.setTexture(ATLAS, SKINS[skinId].idle);
+    }
   }
 
   applyState(x: number, y: number, anim: string) {

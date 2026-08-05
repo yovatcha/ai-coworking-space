@@ -1,5 +1,24 @@
 @AGENTS.md
+@docs/adr/README.md
 # 🤖 CLAUDE.md – AI Assistant Guide
+
+## 📐 Architecture Decision Records
+
+`docs/adr/` holds one file per architectural decision, each ending in a
+**Recipe** — the exact steps to repeat that kind of change.
+
+**Read the relevant ADR before writing code in that area:**
+
+| Task | ADR |
+|------|-----|
+| Adding any sprite / image / art | `docs/adr/0001-asset-pipeline-texture-atlas.md` |
+| Adding a player avatar skin | `docs/adr/0002-player-avatar-skins.md` |
+| Adding an AI agent / NPC | `docs/adr/0003-npc-agent-pattern.md` |
+| Adding furniture or collision | `docs/adr/0004-furniture-collision.md` |
+
+Follow the Recipe rather than inventing a new approach. If a change contradicts
+an ADR, say so and propose a new ADR instead of quietly diverging.
+
 
 ## 🎯 Purpose
 
