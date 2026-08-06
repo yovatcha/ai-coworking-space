@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { BG_WIDTH, BG_HEIGHT, ATLAS } from '../scenes/MainScene';
+import { ROOM, ATLAS } from '../scenes/MainScene';
 
 const INTERACT_DIST = 100;
 const SPEED = 60;
@@ -68,12 +68,12 @@ export default class Rat extends Phaser.GameObjects.Sprite {
 
     if (this.vx !== 0 || this.vy !== 0) {
       const dt = delta / 1000;
-      const nx = Phaser.Math.Clamp(this.x + this.vx * dt, 40, BG_WIDTH - 40);
-      const ny = Phaser.Math.Clamp(this.y + this.vy * dt, 40, BG_HEIGHT - 40);
+      const nx = Phaser.Math.Clamp(this.x + this.vx * dt, ROOM.left, ROOM.right);
+      const ny = Phaser.Math.Clamp(this.y + this.vy * dt, ROOM.top, ROOM.bottom);
 
       // Bounce off walls
-      if (nx === 40 || nx === BG_WIDTH - 40) this.vx *= -1;
-      if (ny === 40 || ny === BG_HEIGHT - 40) this.vy *= -1;
+      if (nx === ROOM.left || nx === ROOM.right) this.vx *= -1;
+      if (ny === ROOM.top || ny === ROOM.bottom) this.vy *= -1;
 
       this.setPosition(nx, ny);
     }

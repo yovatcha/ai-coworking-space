@@ -24,7 +24,8 @@ extension: `assets-src/ped/stand1.png` → frame `ped/stand1`.
 Sprites are stored at **2× their on-screen size** and drawn at `setScale(0.5)`,
 which gives retina headroom without a second asset set.
 
-Exceptions to the atlas, listed in `STANDALONE`: `bg.png` (too large to pack)
+Exceptions to the atlas, listed in `STANDALONE`: `bg3.png` (too large to pack —
+the room background, authored 1:1 at 1920 × 1080 to match `BG_WIDTH`/`BG_HEIGHT`)
 and `dreamspace-banner.png` (consumed by the DOM, not Phaser). These are lossy
 webp q95 — they are flat illustrations, so lossy is invisible. The atlas itself
 is **lossless** webp; sprites have hard edges and alpha where lossy leaves

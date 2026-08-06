@@ -57,9 +57,9 @@ co-working room and would need a rethink before anything competitive.
   is fully readable in one place.
 - Every rect is placed by hand and does not follow the sprite. Move the image
   and the rect stays behind, silently.
-- `MainScene.update()` currently has exactly one hardcoded `deskBounds` block.
-  Adding a second colliding object by copy-pasting the block works, but see the
-  refactor note below.
+- `MainScene.update()` loops the module-level `SOLIDS` array (the refactor the
+  note below called for — done when bg3 landed and one desk became ~24 rects).
+  Adding furniture is now one entry in that array.
 - Least-penetration resolution can slide the player sideways when they walk
   into a corner. At `speed = 200` (~3.3 px/frame at 60 fps) against `ph = 24`
   there is no tunnelling risk.
@@ -83,12 +83,9 @@ co-working room and would need a rethink before anything competitive.
    That is the whole job for non-blocking decoration. Stop here if the player
    should walk through it.
 
-3. **Make it solid** — add a bounds field and a push-out block. Mirror the
-   `deskBounds` pattern:
+3. **Make it solid** — add one entry to `SOLIDS` in `MainScene.ts`:
    ```ts
-   private shelfBounds!: { cx: number; cy: number; hw: number; hh: number };
-   // in create(), next to the image:
-   this.shelfBounds = { cx: x, cy: y + 20, hw: 75, hh: 25 };
+   { cx: x, cy: y + 20, hw: 75, hh: 25 },
    ```
    Sizing: `hw` ≈ half the on-screen width. `hh` is the **base depth only** —
    start at a third of the half-height and nudge until it feels right. Offset
@@ -103,16 +100,9 @@ co-working room and would need a rethink before anything competitive.
 
 ## Refactor note
 
-The push-out block is written once, inline, for one desk. **On the second
-colliding object**, replace the single field with an array and loop over it
-rather than pasting the block again:
-
-```ts
-private solids: { cx: number; cy: number; hw: number; hh: number }[] = [];
-```
-
-Three copies of the same eight lines is where this stops being simple and starts
-being a maintenance problem. One copy is fine; two is the signal.
+**Done.** The push-out block started inline for one desk; bg3 draws its own
+furniture, so the room went from one desk sprite to ~24 traced rects and the
+block became a loop over `SOLIDS`. Keep it that way — add data, not code.
 
 ## Alternatives considered
 
@@ -120,7 +110,7 @@ being a maintenance problem. One copy is fine; two is the signal.
   bodies, and a debug renderer into a game whose movement is four `if`
   statements. Contradicts the stated no-physics constraint.
 - **Tilemap collision layer.** The right answer for a tile-based room. The
-  background is a single 2064 × 1152 illustration, not a tilemap — adopting it
+  background is a single 1920 × 1080 illustration, not a tilemap — adopting it
   means re-authoring the art.
 - **Collision rects derived from sprite bounds.** Automatic, but wrong for
   top-down: it would block the walkable area behind every desk.

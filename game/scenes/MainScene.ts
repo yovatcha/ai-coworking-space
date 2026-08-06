@@ -20,6 +20,60 @@ export const BG_HEIGHT = 1080;
 // Frame names mirror the source paths, e.g. 'ped/stand1'.
 export const ATLAS = 'atlas';
 
+// Walkable floor inside the room walls — bg3 insets the floor from the canvas,
+// so the outer band of the image is not somewhere anything should stand.
+export const ROOM = { left: 100, top: 75, right: 1790, bottom: 965 };
+
+type Rect = { cx: number; cy: number; hw: number; hh: number };
+
+/**
+ * Solid furniture, traced off the bg3 artwork. Centre + half-extents, resolved
+ * in `update()` — see docs/adr/0004-furniture-collision.md. Every piece of
+ * furniture is painted into the background, so these rects are the only thing
+ * that makes the room feel solid; move one and nothing on screen moves with it.
+ */
+const SOLIDS: Rect[] = [
+  // Room walls — the floor is inset from the 1920x1080 canvas on every side
+  { cx: 40,   cy: 540,  hw: 42,  hh: 540 },  // left
+  { cx: 1858, cy: 540,  hw: 64,  hh: 540 },  // right
+  { cx: 960,  cy: 28,   hw: 960, hh: 30  },  // top
+  { cx: 960,  cy: 1032, hw: 960, hh: 58  },  // bottom
+
+  // Left workstation cluster (Google Bro / Sheet Bro sit here)
+  { cx: 239, cy: 365, hw: 121, hh: 38 },
+  { cx: 239, cy: 560, hw: 121, hh: 40 },
+  { cx: 239, cy: 775, hw: 121, hh: 40 },
+  { cx: 590, cy: 778, hw: 140, hh: 45 },
+
+  { cx: 598, cy: 495, hw: 152, hh: 55 },  // meeting table
+  { cx: 955, cy: 532, hw: 107, hh: 48 },  // secretary desk
+  { cx: 485, cy: 190, hw: 205, hh: 58 },  // back counter + shelving
+
+  // Top-centre lounge
+  { cx: 905,  cy: 205, hw: 105, hh: 45 },  // sofa
+  { cx: 910,  cy: 318, hw: 90,  hh: 33 },  // coffee table
+  { cx: 1062, cy: 175, hw: 37,  hh: 68 },  // drinks cabinet
+
+  // Divider between office and garage — the gap below it is the walkway
+  { cx: 1127, cy: 330, hw: 26, hh: 290 },
+  { cx: 1112, cy: 598, hw: 40, hh: 45 },
+
+  { cx: 1312, cy: 465, hw: 108, hh: 215 },  // black Porsche
+  { cx: 1590, cy: 476, hw: 110, hh: 214 },  // white Porsche
+
+  // Kitchen
+  { cx: 1055, cy: 790, hw: 175, hh: 75 },
+  { cx: 1105, cy: 900, hw: 120, hh: 35 },
+
+  // Bottom-right lounge
+  { cx: 1545, cy: 810, hw: 145, hh: 55 },
+  { cx: 1537, cy: 917, hw: 88,  hh: 33 },
+
+  // Right-hand wall units
+  { cx: 1740, cy: 187, hw: 35, hh: 58  },
+  { cx: 1742, cy: 805, hw: 33, hh: 165 },
+];
+
 export default class MainScene extends Phaser.Scene {
   private player!: Player;
   private socket!: Socket;
@@ -29,12 +83,11 @@ export default class MainScene extends Phaser.Scene {
   private sheetBro!: SheetBro;
   private rat!: Rat;
   private keyE!: Phaser.Input.Keyboard.Key;
-  private deskBounds!: { cx: number; cy: number; hw: number; hh: number };
-  private doorX = BG_WIDTH - 120;
-  private doorY = BG_HEIGHT - 120;
+  // The exit is the door drawn into the top-left corner of bg3
+  private doorX = 166;
+  private doorY = 200;
   private readonly DOOR_INTERACT_DIST = 100;
   private doorHint!: Phaser.GameObjects.Text;
-  private doorImage!: Phaser.GameObjects.Image;
 
   // Throttle how often we emit position (ms)
   private lastEmit = 0;
@@ -68,16 +121,16 @@ export default class MainScene extends Phaser.Scene {
     // Pinned to 0,0 and sized to the world so the map lines up 1:1 with the bounds
     this.add.image(0, 0, 'bg').setOrigin(0, 0).setDisplaySize(BG_WIDTH, BG_HEIGHT);
 
-    // Exit door — bottom-right of the room
-    this.doorImage = this.add.image(this.doorX, this.doorY, ATLAS, 'furnitures/exit-door').setScale(0.5).setDepth(10);
+    // Exit door — no sprite, bg3 already draws the door in the top-left corner.
+    // Hint sits below it so it doesn't cover the doorway.
     this.doorHint = this.add
-      .text(this.doorX, this.doorY - 80, '[E] Exit', {
+      .text(this.doorX, this.doorY + 40, '[E] Exit', {
         fontSize: '11px',
         color: '#ffffff',
         backgroundColor: '#000000aa',
         padding: { x: 4, y: 2 },
       })
-      .setOrigin(0.5, 1)
+      .setOrigin(0.5, 0)
       .setVisible(false)
       .setDepth(20);
 
@@ -100,28 +153,27 @@ export default class MainScene extends Phaser.Scene {
 
     this.memberId = getMemberId();
     this.color = getColor(this.memberId);
-    this.player = new Player(this, BG_WIDTH / 2, BG_HEIGHT / 2, this.color);
+    // Spawn on the open floor inside the entrance, clear of the door trigger
+    this.player = new Player(this, 230, 290, this.color);
 
-    // Center camera on the room before following the player
-    this.cameras.main.centerOn(BG_WIDTH / 2, BG_HEIGHT / 2);
+    // Center camera on the spawn before following the player
+    this.cameras.main.centerOn(this.player.x, this.player.y);
     this.cameras.main.startFollow(this.player, true);
 
-    // Working desk behind the secretary NPC
-    // NPC sprite is 410px at scale 0.5 = ~205px wide
-    // Desk sprite is 394x215 at scale 0.5 = ~197px wide, ~107px tall
-    this.add.image(180, 175, ATLAS, 'furnitures/working-desk').setScale(0.5).setDepth(10);
+    // NPCs stand at desks that bg3 already draws — no furniture sprites needed.
+    // Secretary — the lone workstation in the middle of the room
+    this.npc = new NPC(this, 955, 615);
 
-    // Collision rect for the desk (center x, center y, half-width, half-height)
-    this.deskBounds = { cx: 180, cy: 175, hw: 98, hh: 30 };
+    // Google Bro — the aisle beside the top-left workstation
+    this.googleBro = new GoogleBro(this, 400, 370);
 
-    // NPC — near top-left of the room
-    this.npc = new NPC(this, 180, 160);
+    // Sheet Bro — Google Bro's employee, one desk down
+    this.sheetBro = new SheetBro(this, 400, 590);
 
-    // Google Bro — center-right of the room
-    this.googleBro = new GoogleBro(this, BG_WIDTH - 400, BG_HEIGHT / 2);
-
-    // Sheet Bro — Google Bro's employee, nearby
-    this.sheetBro = new SheetBro(this, BG_WIDTH - 280, BG_HEIGHT / 2);
+    // Same y-based depth the player uses, so walking past an NPC sorts correctly
+    for (const a of [this.npc, this.googleBro, this.sheetBro]) {
+      a.setDepth(10 + a.y / BG_HEIGHT);
+    }
 
     // Rat animations
     const R = 'rattatoiue/';
@@ -131,8 +183,8 @@ export default class MainScene extends Phaser.Scene {
     this.anims.create({ key: 'rat-walk-left',  frames: this.frames(R + 'arrowleft', 1, 4),  frameRate: 8, repeat: -1 });
     this.anims.create({ key: 'rat-walk-up',    frames: this.frames(R + 'arrowup', 1, 4),    frameRate: 8, repeat: -1 });
 
-    // Rat — wanders around the room
-    this.rat = new Rat(this, BG_WIDTH / 2 + 200, BG_HEIGHT / 2 + 100);
+    // Rat — wanders around the room, starting on the floor by the kitchen
+    this.rat = new Rat(this, 800, 900);
 
     // Resume rat walking when chat closes
     window.addEventListener('chat-closed', () => this.rat.stopInteracting());
@@ -258,26 +310,18 @@ export default class MainScene extends Phaser.Scene {
     // Always read the key so it doesn't stay "just down" until after typing ends
     const pressE = Phaser.Input.Keyboard.JustDown(this.keyE) && !typing;
 
-    // Depth sorting: player renders in front of door when below it, behind when above
-    // Also sort against NPC/desk (y=175)
-    const npcY = 175;
-    const aboveDoor = this.player.y <= this.doorY;
-    const aboveDesk = this.player.y <= npcY;
+    // Depth sorting: whoever is further down the screen draws on top. All the
+    // furniture lives in the background image now, so the NPCs are the only
+    // sprites left to sort against.
+    this.player.setDepth(10 + this.player.y / BG_HEIGHT);
+    this.rat.setDepth(10 + this.rat.y / BG_HEIGHT);
 
-    if (!aboveDoor || !aboveDesk) {
-      // Player is in front of at least one object — use highest needed depth
-      this.player.setDepth(11);
-    } else {
-      this.player.setDepth(9);
-    }
-
-    // Push player out of desk bounds (AABB)
-    const { cx, cy, hw, hh } = this.deskBounds;
+    // Push player out of every solid (AABB, axis of least penetration)
     const ph = 24; // player half-size (matches PLAYER_HALF in Player.ts)
-    const overlapX = (hw + ph) - Math.abs(this.player.x - cx);
-    const overlapY = (hh + ph) - Math.abs(this.player.y - cy);
-    if (overlapX > 0 && overlapY > 0) {
-      // Resolve along the axis of least penetration
+    for (const { cx, cy, hw, hh } of SOLIDS) {
+      const overlapX = (hw + ph) - Math.abs(this.player.x - cx);
+      const overlapY = (hh + ph) - Math.abs(this.player.y - cy);
+      if (overlapX <= 0 || overlapY <= 0) continue;
       if (overlapX < overlapY) {
         this.player.x += overlapX * Math.sign(this.player.x - cx);
       } else {
