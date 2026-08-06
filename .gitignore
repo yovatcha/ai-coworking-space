@@ -49,3 +49,4 @@ prisma/dev.db-journal
 
 # compiled socket server (rebuilt by `npm run build:backend`)
 /dist
+.env*

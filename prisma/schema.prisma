@@ -4,10 +4,10 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  // Supabase transaction pooler, port 6543 (used at runtime)
+  // Neon pooled connection (used at runtime)
   url       = env("DATABASE_URL")
-  // Supabase session pooler, port 5432 (used by `prisma migrate`)
-  directUrl = env("DIRECT_URL")
+  // Neon direct connection, no pooler (used by `prisma migrate`)
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model ChatMessage {

@@ -216,7 +216,7 @@ Focus:
 
 * Frontend must run on Vercel
 * Socket.IO backend runs on Render
-* Postgres is hosted on Supabase (accessed via Prisma only — no Supabase client/auth)
+* Postgres is hosted on Neon, provisioned via the Vercel Marketplace (accessed via Prisma only)
 * WebSocket must NOT be on Vercel
 
 ---
