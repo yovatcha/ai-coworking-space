@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22.18.0"
   },
   "scripts": {
-    "dev": "node --loader ts-node/esm server.js",
+    "dev": "node server.js",
     "build": "prisma generate && next build",
     "start": "NODE_ENV=production node server.js",
     "build:backend": "tsc -p tsconfig.server.json",
@@ -25,7 +25,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",

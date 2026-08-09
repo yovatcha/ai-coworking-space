@@ -11,6 +11,7 @@ area — it saves rediscovering the asset pipeline or the event wiring every tim
 | [0003](0003-npc-agent-pattern.md) | Every AI agent = entity + window event + panel + system prompt | Accepted |
 | [0004](0004-furniture-collision.md) | Furniture collision is a hand-placed AABB in `MainScene.update()` | Accepted |
 | [0005](0005-fixed-roster-member-colors.md) | Fixed roster of six members, told apart by colour tint | Accepted |
+| [0006](0006-secretary-team-memory-tool-calling.md) | Secretary team memory: Project rows + tool calling over a plain text stream | Accepted |
 
 ## Format
 

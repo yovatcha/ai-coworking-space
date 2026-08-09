@@ -17,7 +17,7 @@ app.prepare().then(async () => {
 
   let initSocket;
   if (dev) {
-    // Use ts-node ESM loader (registered via --loader in NODE_OPTIONS or package.json)
+    // Node >= 22.18 strips the type annotations natively — no loader needed
     const mod = await import('./server/socket.ts');
     initSocket = mod.initSocket;
   } else {

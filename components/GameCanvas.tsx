@@ -7,6 +7,7 @@ import { getGameConfig } from "@/game/config";
 import { MEMBERS, PALETTE, GUEST } from "@/lib/members";
 import { getMemberId, getColor, saveColor } from "@/game/identity";
 import ChatPanel from "./ChatPanel";
+import SecretaryPanel from "./SecretaryPanel";
 import SheetBroPanel from "./SheetBroPanel";
 import SayBar from "./SayBar";
 import { logout, getUserId } from "./LoginPage";
@@ -355,7 +356,7 @@ export default function GameCanvas() {
             }}
             className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-50"
           >
-            <ChatPanel onClose={() => setChatOpen(false)} userId={userId} />
+            <SecretaryPanel onClose={() => setChatOpen(false)} userId={userId} />
           </motion.div>
         )}
       </AnimatePresence>
