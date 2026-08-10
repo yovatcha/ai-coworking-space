@@ -108,6 +108,11 @@ export default class MainScene extends Phaser.Scene {
   private chatOpen = false;
   // True while the broadcast input at the bottom of the screen has focus
   private sayOpen = false;
+  // Jump scare for Tent: talk to err-publio every SCARE_MS or pay the price.
+  // 0 = deadline not armed yet (set on the first update tick as Tent).
+  private readonly SCARE_MS = 20000;
+  private scareAt = 0;
+  private scaring = false;
 
   constructor() {
     super({ key: "MainScene" });
@@ -277,8 +282,11 @@ export default class MainScene extends Phaser.Scene {
     // Invisible while no one is logged in as Tent.
     this.tentChaser = new TentChaser(this, 1700, 940);
 
-    // Resume rat walking when chat closes
-    window.addEventListener("chat-closed", () => this.rat.stopInteracting());
+    // Resume rat walking / chaser haunting when chat closes
+    window.addEventListener("chat-closed", () => {
+      this.rat.stopInteracting();
+      this.tentChaser.stopInteracting();
+    });
 
     // E key for interaction
     this.keyE = this.input.keyboard!.addKey(
@@ -461,6 +469,40 @@ export default class MainScene extends Phaser.Scene {
     this.remotePlayers.set(id, rp);
   }
 
+  /** Full-screen rattatoiue face lunging at the camera. Local prank — nothing
+   *  is emitted, only Tent's own screen suffers. Re-arms for another round. */
+  private jumpScare(time: number) {
+    this.scaring = true;
+    this.scareAt = time + this.SCARE_MS;
+
+    const { width, height } = this.scale;
+    const face = this.add
+      .image(width / 2, height / 2, ATLAS, "rattatoiue/front1")
+      .setScrollFactor(0)
+      .setDepth(1000)
+      .setScale(0.3);
+    this.cameras.main.shake(700, 0.015);
+    this.tweens.add({
+      targets: face,
+      scale: 16,
+      duration: 550,
+      ease: "Expo.easeIn",
+      onComplete: () => {
+        this.time.delayedCall(350, () => {
+          this.tweens.add({
+            targets: face,
+            alpha: 0,
+            duration: 200,
+            onComplete: () => {
+              face.destroy();
+              this.scaring = false;
+            },
+          });
+        });
+      },
+    });
+  }
+
   /** Position of the player logged in as Tent, or null if Tent isn't here. */
   private findTent(): { x: number; y: number } | null {
     if (this.memberId === "tent") {
@@ -533,6 +575,21 @@ export default class MainScene extends Phaser.Scene {
     // Tent chaser — haunts whoever is Tent, local or remote
     this.tentChaser.update(time, delta, this.findTent());
     this.tentChaser.setDepth(10 + this.tentChaser.y / BG_HEIGHT);
+
+    const nearChaser = this.tentChaser.updateProximity(
+      this.player.x,
+      this.player.y,
+    );
+    if (nearChaser && pressE) {
+      this.tentChaser.interact();
+      this.scareAt = time + this.SCARE_MS;
+    }
+
+    // Tent must keep talking to err-publio — go quiet too long and it gets you
+    if (this.memberId === "tent") {
+      if (this.scareAt === 0) this.scareAt = time + this.SCARE_MS;
+      if (!this.scaring && time >= this.scareAt) this.jumpScare(time);
+    }
 
     // Door proximity + interaction
     const nearDoor =

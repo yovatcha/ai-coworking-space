@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { ROOM, ATLAS } from '../scenes/MainScene';
 
 // Prank entity: haunts whoever is logged in as Tent.
+const INTERACT_DIST = 100;
 const CHARGE_MS = 1000; // wind-up before every dash — the "debounce"
 const DASH_SPEED = 320; // faster than the player's 200, so it always catches up
 const CATCH_DIST = 44; // close enough — stop and lurk beside Tent
@@ -10,8 +11,10 @@ const WAKE_DIST = 130; // Tent escaped this far → start charging again
 type State = 'lurk' | 'charge' | 'dash';
 
 export default class TentChaser extends Phaser.GameObjects.Sprite {
+  private hint: Phaser.GameObjects.Text;
   private mode: State = 'lurk';
   private chargeStart = 0;
+  private isInteracting = false;
   // Position is jittered every frame while charging, so keep the real spot here
   private anchorX: number;
   private anchorY: number;
@@ -23,6 +26,16 @@ export default class TentChaser extends Phaser.GameObjects.Sprite {
     this.anchorX = x;
     this.anchorY = y;
     this.setVisible(false);
+
+    this.hint = scene.add
+      .text(x, y - 24, '[E] Talk', {
+        fontSize: '10px',
+        color: '#ffffff',
+        backgroundColor: '#000000aa',
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5, 1)
+      .setVisible(false);
   }
 
   /** Call once per frame with Tent's position, or null when no Tent is in the room. */
@@ -30,11 +43,19 @@ export default class TentChaser extends Phaser.GameObjects.Sprite {
     if (!target) {
       // No Tent, no haunting — vanish until they log in
       this.setVisible(false);
+      this.hint.setVisible(false);
       this.mode = 'lurk';
       this.setPosition(this.anchorX, this.anchorY);
       return;
     }
     this.setVisible(true);
+    this.hint.setPosition(this.anchorX, this.anchorY - 24);
+
+    if (this.isInteracting) {
+      this.setPosition(this.anchorX, this.anchorY);
+      this.anims.play('chaser-idle', true);
+      return;
+    }
 
     const dist = Phaser.Math.Distance.Between(
       this.anchorX,
@@ -97,5 +118,24 @@ export default class TentChaser extends Phaser.GameObjects.Sprite {
           ? 'chaser-walk-down'
           : 'chaser-walk-up';
     this.anims.play(key, true);
+  }
+
+  updateProximity(px: number, py: number): boolean {
+    const near =
+      this.visible &&
+      Phaser.Math.Distance.Between(px, py, this.anchorX, this.anchorY) <
+        INTERACT_DIST;
+    this.hint.setVisible(near);
+    return near;
+  }
+
+  interact() {
+    this.isInteracting = true;
+    this.mode = 'lurk';
+    window.dispatchEvent(new CustomEvent('err-publio-chat'));
+  }
+
+  stopInteracting() {
+    this.isInteracting = false;
   }
 }

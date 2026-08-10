@@ -18,6 +18,7 @@ export default function GameCanvas() {
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [ratOpen, setRatOpen] = useState(false);
+  const [errPublioOpen, setErrPublioOpen] = useState(false);
   const [googleBroOpen, setGoogleBroOpen] = useState(false);
   const [sheetBroOpen, setSheetBroOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -77,6 +78,12 @@ export default function GameCanvas() {
   }, []);
 
   useEffect(() => {
+    const open = () => setErrPublioOpen(true);
+    window.addEventListener("err-publio-chat", open);
+    return () => window.removeEventListener("err-publio-chat", open);
+  }, []);
+
+  useEffect(() => {
     const open = () => setGoogleBroOpen(true);
     window.addEventListener("google-bro-chat", open);
     return () => window.removeEventListener("google-bro-chat", open);
@@ -97,14 +104,14 @@ export default function GameCanvas() {
   // Notify Phaser scene when chat opens/closes so movement stops while typing
   useEffect(() => {
     window.dispatchEvent(
-      new CustomEvent(chatOpen || ratOpen || googleBroOpen || sheetBroOpen ? "chat-opened" : "chat-closed"),
+      new CustomEvent(chatOpen || ratOpen || errPublioOpen || googleBroOpen || sheetBroOpen ? "chat-opened" : "chat-closed"),
     );
-    if (chatOpen || ratOpen || googleBroOpen || sheetBroOpen) {
+    if (chatOpen || ratOpen || errPublioOpen || googleBroOpen || sheetBroOpen) {
       gameRef.current
         ?.querySelectorAll<HTMLElement>("canvas, *[tabindex]")
         .forEach((el) => el.blur());
     }
-  }, [chatOpen, ratOpen, googleBroOpen, sheetBroOpen]);
+  }, [chatOpen, ratOpen, errPublioOpen, googleBroOpen, sheetBroOpen]);
 
   return (
     <div
@@ -115,7 +122,7 @@ export default function GameCanvas() {
       <div ref={gameRef} className="w-full h-full" />
 
       {/* Broadcast chat bar — hidden while an NPC panel occupies the same spot */}
-      {!chatOpen && !ratOpen && !googleBroOpen && !sheetBroOpen && !exitConfirm && <SayBar />}
+      {!chatOpen && !ratOpen && !errPublioOpen && !googleBroOpen && !sheetBroOpen && !exitConfirm && <SayBar />}
 
       {/* Rat dialog bubble */}
       <AnimatePresence>
@@ -329,6 +336,201 @@ export default function GameCanvas() {
                         "translate(1px,1px)";
                       (e.currentTarget as HTMLButtonElement).style.boxShadow =
                         "1px 1px 0 #000";
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Err-Publio dialog bubble — Tent's stalker demands attention */}
+      <AnimatePresence>
+        {errPublioOpen && (
+          <motion.div
+            key="err-publio"
+            initial={{ opacity: 0, y: 40, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 pointer-events-auto z-50"
+            style={{ width: "min(360px, 100vw - 2rem)" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                background: "#1a1c2c",
+                fontFamily: "'Press Start 2P', monospace",
+                border: "4px solid #8a2a2a",
+                boxShadow:
+                  "-4px -4px 0 0 #bb6f6f, 4px 4px 0 0 #0d0f1a, 6px 6px 0 0 #000",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {/* scanlines */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  pointerEvents: "none",
+                  zIndex: 10,
+                  background:
+                    "repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.10) 3px,rgba(0,0,0,0.10) 4px)",
+                }}
+              />
+
+              {/* title bar */}
+              <div
+                style={{
+                  background: "#2a0000",
+                  borderBottom: "4px solid #0d0f1a",
+                  padding: "8px 10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    background: "#3d0000",
+                    border: "3px solid #f74f4f",
+                    boxShadow: "2px 2px 0 #000, -1px -1px 0 #ff8888",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 14,
+                    flexShrink: 0,
+                  }}
+                >
+                  👁️
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 9,
+                      color: "#f79494",
+                      textShadow: "2px 2px 0 #000",
+                    }}
+                  >
+                    ERR-PUBLIO
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 6,
+                      color: "#f74f4f",
+                      textShadow: "1px 1px 0 #000",
+                    }}
+                  >
+                    DO NOT IGNORE ME
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 6,
+                    color: "#5a6988",
+                    textShadow: "1px 1px 0 #000",
+                  }}
+                >
+                  ALWAYS
+                </span>
+              </div>
+
+              {/* message body */}
+              <div
+                style={{
+                  padding: "14px 12px",
+                  background: "#1a1c2c",
+                  backgroundImage:
+                    "radial-gradient(circle, #2a2d3e 1px, transparent 1px)",
+                  backgroundSize: "12px 12px",
+                  position: "relative",
+                }}
+              >
+                {/* pixel speaker nub */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: -1,
+                    left: 18,
+                    width: 12,
+                    height: 4,
+                    background: "#f74f4f",
+                  }}
+                />
+                <p
+                  style={{
+                    fontFamily: "'Sarabun', sans-serif",
+                    fontSize: 16,
+                    fontWeight: 400,
+                    lineHeight: 1.6,
+                    color: "#e6aaaa",
+                    textShadow: "1px 1px 0 #000",
+                    margin: 0,
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  ดีมาก TENT… มาคุยกับฉันแบบนี้บ่อยๆ นะ
+                  ฉันมองนายอยู่ตลอดเวลา แล้วอีก 20 วินาทีเจอกันใหม่
+                </p>
+              </div>
+
+              {/* pixel divider */}
+              <div style={{ height: 4, background: "#0d0f1a" }} />
+              <div style={{ height: 3, background: "#6a2a2a" }} />
+              <div style={{ height: 4, background: "#0d0f1a" }} />
+
+              {/* actions */}
+              <div
+                style={{
+                  padding: "10px 12px",
+                  background: "#2a0000",
+                  borderTop: "4px solid #0d0f1a",
+                  display: "flex",
+                  gap: 8,
+                }}
+              >
+                {[
+                  {
+                    label: "OK...",
+                    primary: true,
+                    action: () => setErrPublioOpen(false),
+                  },
+                  {
+                    label: "HELP",
+                    primary: false,
+                    action: () => setErrPublioOpen(false),
+                  },
+                ].map(({ label, primary, action }) => (
+                  <button
+                    key={label}
+                    onClick={action}
+                    style={{
+                      flex: 1,
+                      padding: "9px 0",
+                      fontFamily: "'Press Start 2P', monospace",
+                      fontSize: 8,
+                      letterSpacing: "0.05em",
+                      background: primary ? "#f74f4f" : "#1a1c2c",
+                      color: primary ? "#0a0a1a" : "#f74f4f",
+                      border: `3px solid ${primary ? "#ff8888" : "#5a2020"}`,
+                      boxShadow: primary
+                        ? "3px 3px 0 #000, -1px -1px 0 #ff8888"
+                        : "3px 3px 0 #000, -1px -1px 0 #3a1010",
+                      cursor: "pointer",
                     }}
                   >
                     {label}
