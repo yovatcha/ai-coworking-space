@@ -477,7 +477,7 @@ export default class MainScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     const face = this.add
-      .image(width / 2, height / 2, ATLAS, "rattatoiue/front1")
+      .image(width / 2, height / 2, ATLAS, "err-publio/front1")
       .setScrollFactor(0)
       .setDepth(1000)
       .setScale(0.3);
