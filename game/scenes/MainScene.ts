@@ -4,6 +4,7 @@ import Player from "../entities/Player";
 import RemotePlayer from "../entities/RemotePlayer";
 import NPC from "../entities/NPC";
 import Rat from "../entities/Rat";
+import TentChaser from "../entities/TentChaser";
 import GoogleBro from "../entities/GoogleBro";
 import SheetBro from "../entities/SheetBro";
 import { resolveMember, resolveColor } from "@/lib/members";
@@ -82,6 +83,7 @@ export default class MainScene extends Phaser.Scene {
   private googleBro!: GoogleBro;
   private sheetBro!: SheetBro;
   private rat!: Rat;
+  private tentChaser!: TentChaser;
   private keyE!: Phaser.Input.Keyboard.Key;
   // The exit is the door drawn into the top-left corner of bg3
   private doorX = 166;
@@ -238,6 +240,10 @@ export default class MainScene extends Phaser.Scene {
 
     // Rat — wanders around the room, starting on the floor by the kitchen
     this.rat = new Rat(this, 800, 900);
+
+    // Tent's personal ghost — lurks in the garage corner until Tent shows up.
+    // Invisible while no one is logged in as Tent.
+    this.tentChaser = new TentChaser(this, 1700, 940);
 
     // Resume rat walking when chat closes
     window.addEventListener("chat-closed", () => this.rat.stopInteracting());
@@ -423,6 +429,17 @@ export default class MainScene extends Phaser.Scene {
     this.remotePlayers.set(id, rp);
   }
 
+  /** Position of the player logged in as Tent, or null if Tent isn't here. */
+  private findTent(): { x: number; y: number } | null {
+    if (this.memberId === "tent") {
+      return { x: this.player.x, y: this.player.y };
+    }
+    for (const rp of this.remotePlayers.values()) {
+      if (rp.member === "tent") return { x: rp.x, y: rp.y };
+    }
+    return null;
+  }
+
   update(time: number, delta: number) {
     const typing = this.chatOpen || this.sayOpen;
     if (!typing) this.player.update(time, delta);
@@ -480,6 +497,10 @@ export default class MainScene extends Phaser.Scene {
     }
 
     this.rat.update(delta);
+
+    // Tent chaser — haunts whoever is Tent, local or remote
+    this.tentChaser.update(time, delta, this.findTent());
+    this.tentChaser.setDepth(10 + this.tentChaser.y / BG_HEIGHT);
 
     // Door proximity + interaction
     const nearDoor =

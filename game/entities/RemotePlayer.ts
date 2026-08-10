@@ -31,6 +31,10 @@ export default class RemotePlayer extends Phaser.GameObjects.Sprite {
     this.bubble.follow(x, y);
   }
 
+  get member() {
+    return this.memberId;
+  }
+
   private labelFor(memberId: string) {
     return (MEMBERS[memberId] ?? MEMBERS[GUEST]).label;
   }
