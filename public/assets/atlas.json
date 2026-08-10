@@ -819,6 +819,326 @@
         "w": 205,
         "h": 205
       }
+    },
+    "err-publio/arrowdown1": {
+      "frame": {
+        "x": 207,
+        "y": 1476,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowdown2": {
+      "frame": {
+        "x": 414,
+        "y": 1476,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowdown3": {
+      "frame": {
+        "x": 621,
+        "y": 1476,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowleft1": {
+      "frame": {
+        "x": 828,
+        "y": 1476,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowleft2": {
+      "frame": {
+        "x": 1035,
+        "y": 1476,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowleft3": {
+      "frame": {
+        "x": 1242,
+        "y": 1476,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowleft4": {
+      "frame": {
+        "x": 1449,
+        "y": 1476,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowright1": {
+      "frame": {
+        "x": 1656,
+        "y": 1476,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowright2": {
+      "frame": {
+        "x": 0,
+        "y": 1683,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowright3": {
+      "frame": {
+        "x": 207,
+        "y": 1683,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowright4": {
+      "frame": {
+        "x": 414,
+        "y": 1683,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowup1": {
+      "frame": {
+        "x": 621,
+        "y": 1683,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowup2": {
+      "frame": {
+        "x": 828,
+        "y": 1683,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowup3": {
+      "frame": {
+        "x": 1035,
+        "y": 1683,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/arrowup4": {
+      "frame": {
+        "x": 1242,
+        "y": 1683,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
+    },
+    "err-publio/front1": {
+      "frame": {
+        "x": 1449,
+        "y": 1683,
+        "w": 205,
+        "h": 205
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 205,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 205,
+        "h": 205
+      }
     }
   },
   "meta": {
@@ -826,7 +1146,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 1965,
-      "h": 1681
+      "h": 1888
     },
     "scale": "1"
   }

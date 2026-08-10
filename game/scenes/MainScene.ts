@@ -238,6 +238,38 @@ export default class MainScene extends Phaser.Scene {
       repeat: -1,
     });
 
+    // Tent chaser animations — err-publio only has 3 down frames
+    const C = "err-publio/";
+    this.anims.create({
+      key: "chaser-idle",
+      frames: [{ key: ATLAS, frame: C + "front1" }],
+      frameRate: 1,
+    });
+    this.anims.create({
+      key: "chaser-walk-down",
+      frames: this.frames(C + "arrowdown", 1, 3),
+      frameRate: 8,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "chaser-walk-right",
+      frames: this.frames(C + "arrowright", 1, 4),
+      frameRate: 8,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "chaser-walk-left",
+      frames: this.frames(C + "arrowleft", 1, 4),
+      frameRate: 8,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "chaser-walk-up",
+      frames: this.frames(C + "arrowup", 1, 4),
+      frameRate: 8,
+      repeat: -1,
+    });
+
     // Rat — wanders around the room, starting on the floor by the kitchen
     this.rat = new Rat(this, 800, 900);
 

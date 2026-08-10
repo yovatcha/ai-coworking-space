@@ -12,6 +12,7 @@ const OUT = path.join(ROOT, 'public/assets');    // optimized, served
 const ATLAS_DIRS = [
   { dir: 'main-charactor', width: 205 },   // 1024 @ 0.1  -> 102px display
   { dir: 'rattatoiue',     width: 205 },   // 1024 @ 0.1  -> 102px
+  { dir: 'err-publio',     width: 205 },   // 1024 @ 0.1  -> 102px
   { dir: 'ped',            width: 410 },   // 1024 @ 0.2  -> 205px
   { dir: 'google-bro',     width: 266 },   // 1024 @ 0.13 -> 133px
   { dir: 'sheet-bro',      width: 266 },   // 1024 @ 0.13 -> 133px

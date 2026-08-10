@@ -1,8 +1,7 @@
 import * as Phaser from 'phaser';
 import { ROOM, ATLAS } from '../scenes/MainScene';
 
-// Prank entity: haunts whoever is logged in as Tent. Reuses the rattatoiue
-// atlas frames + `rat-*` animations until it gets its own art.
+// Prank entity: haunts whoever is logged in as Tent.
 const CHARGE_MS = 1000; // wind-up before every dash — the "debounce"
 const DASH_SPEED = 320; // faster than the player's 200, so it always catches up
 const CATCH_DIST = 44; // close enough — stop and lurk beside Tent
@@ -18,7 +17,7 @@ export default class TentChaser extends Phaser.GameObjects.Sprite {
   private anchorY: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, ATLAS, 'rattatoiue/front1');
+    super(scene, x, y, ATLAS, 'err-publio/front1');
     scene.add.existing(this);
     this.setScale(0.5);
     this.anchorX = x;
@@ -46,7 +45,7 @@ export default class TentChaser extends Phaser.GameObjects.Sprite {
 
     if (this.mode === 'lurk') {
       this.setPosition(this.anchorX, this.anchorY);
-      this.anims.play('rat-idle', true);
+      this.anims.play('chaser-idle', true);
       if (dist > WAKE_DIST) {
         this.mode = 'charge';
         this.chargeStart = time;
@@ -60,7 +59,7 @@ export default class TentChaser extends Phaser.GameObjects.Sprite {
         this.anchorX + Phaser.Math.Between(-2, 2),
         this.anchorY + Phaser.Math.Between(-2, 2),
       );
-      this.anims.play('rat-idle', true);
+      this.anims.play('chaser-idle', true);
       if (time - this.chargeStart >= CHARGE_MS) this.mode = 'dash';
       return;
     }
@@ -69,7 +68,7 @@ export default class TentChaser extends Phaser.GameObjects.Sprite {
     if (dist < CATCH_DIST) {
       this.mode = 'lurk';
       this.setPosition(this.anchorX, this.anchorY);
-      this.anims.play('rat-idle', true);
+      this.anims.play('chaser-idle', true);
       return;
     }
 
@@ -92,11 +91,11 @@ export default class TentChaser extends Phaser.GameObjects.Sprite {
     const key =
       Math.abs(dx) > Math.abs(dy)
         ? dx > 0
-          ? 'rat-walk-right'
-          : 'rat-walk-left'
+          ? 'chaser-walk-right'
+          : 'chaser-walk-left'
         : dy > 0
-          ? 'rat-walk-down'
-          : 'rat-walk-up';
+          ? 'chaser-walk-down'
+          : 'chaser-walk-up';
     this.anims.play(key, true);
   }
 }
