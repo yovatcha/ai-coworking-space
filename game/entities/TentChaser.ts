@@ -35,6 +35,7 @@ export default class TentChaser extends Phaser.GameObjects.Sprite {
         padding: { x: 4, y: 2 },
       })
       .setOrigin(0.5, 1)
+      .setDepth(20)
       .setVisible(false);
   }
 
