@@ -9,6 +9,7 @@ import { getMemberId, getColor, saveColor } from "@/game/identity";
 import ChatPanel from "./ChatPanel";
 import SecretaryPanel from "./SecretaryPanel";
 import SheetBroPanel from "./SheetBroPanel";
+import TaskBoardPanel from "./TaskBoardPanel";
 import SayBar from "./SayBar";
 import { logout, getUserId } from "./LoginPage";
 
@@ -21,6 +22,7 @@ export default function GameCanvas() {
   const [errPublioOpen, setErrPublioOpen] = useState(false);
   const [googleBroOpen, setGoogleBroOpen] = useState(false);
   const [sheetBroOpen, setSheetBroOpen] = useState(false);
+  const [taskBoardOpen, setTaskBoardOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
@@ -96,6 +98,12 @@ export default function GameCanvas() {
   }, []);
 
   useEffect(() => {
+    const open = () => setTaskBoardOpen(true);
+    window.addEventListener("task-board-open", open);
+    return () => window.removeEventListener("task-board-open", open);
+  }, []);
+
+  useEffect(() => {
     const handle = () => { setExitConfirm(true); };
     window.addEventListener("exit-door", handle);
     return () => window.removeEventListener("exit-door", handle);
@@ -104,14 +112,14 @@ export default function GameCanvas() {
   // Notify Phaser scene when chat opens/closes so movement stops while typing
   useEffect(() => {
     window.dispatchEvent(
-      new CustomEvent(chatOpen || ratOpen || errPublioOpen || googleBroOpen || sheetBroOpen ? "chat-opened" : "chat-closed"),
+      new CustomEvent(chatOpen || ratOpen || errPublioOpen || googleBroOpen || sheetBroOpen || taskBoardOpen ? "chat-opened" : "chat-closed"),
     );
-    if (chatOpen || ratOpen || errPublioOpen || googleBroOpen || sheetBroOpen) {
+    if (chatOpen || ratOpen || errPublioOpen || googleBroOpen || sheetBroOpen || taskBoardOpen) {
       gameRef.current
         ?.querySelectorAll<HTMLElement>("canvas, *[tabindex]")
         .forEach((el) => el.blur());
     }
-  }, [chatOpen, ratOpen, errPublioOpen, googleBroOpen, sheetBroOpen]);
+  }, [chatOpen, ratOpen, errPublioOpen, googleBroOpen, sheetBroOpen, taskBoardOpen]);
 
   return (
     <div
@@ -122,7 +130,7 @@ export default function GameCanvas() {
       <div ref={gameRef} className="w-full h-full" />
 
       {/* Broadcast chat bar — hidden while an NPC panel occupies the same spot */}
-      {!chatOpen && !ratOpen && !errPublioOpen && !googleBroOpen && !sheetBroOpen && !exitConfirm && <SayBar />}
+      {!chatOpen && !ratOpen && !errPublioOpen && !googleBroOpen && !sheetBroOpen && !taskBoardOpen && !exitConfirm && <SayBar />}
 
       {/* Rat dialog bubble */}
       <AnimatePresence>
@@ -595,6 +603,22 @@ export default function GameCanvas() {
               onOpenGoogleBro={() => { setSheetBroOpen(false); setGoogleBroOpen(true); }}
               userId={userId}
             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Announce board — per-person open tasks from irin-task-board */}
+      <AnimatePresence>
+        {taskBoardOpen && (
+          <motion.div
+            key="task-board"
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-50"
+          >
+            <TaskBoardPanel onClose={() => setTaskBoardOpen(false)} />
           </motion.div>
         )}
       </AnimatePresence>

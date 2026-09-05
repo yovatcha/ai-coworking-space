@@ -15,6 +15,7 @@
 | Adding a member or player colour | `docs/adr/0005-fixed-roster-member-colors.md` |
 | Adding an AI agent / NPC | `docs/adr/0003-npc-agent-pattern.md` |
 | Adding furniture or collision | `docs/adr/0004-furniture-collision.md` |
+| Pulling data from another app (irin-task-board) | `docs/adr/0007-announce-board-cross-app-feed.md` |
 
 Follow the Recipe rather than inventing a new approach. If a change contradicts
 an ADR, say so and propose a new ADR instead of quietly diverging.

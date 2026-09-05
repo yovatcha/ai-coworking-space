@@ -7,6 +7,7 @@ import Rat from "../entities/Rat";
 import TentChaser from "../entities/TentChaser";
 import GoogleBro from "../entities/GoogleBro";
 import SheetBro from "../entities/SheetBro";
+import AnnounceBoard from "../entities/AnnounceBoard";
 import { resolveMember, resolveColor } from "@/lib/members";
 import { getMemberId, getColor } from "../identity";
 
@@ -84,6 +85,7 @@ export default class MainScene extends Phaser.Scene {
   private sheetBro!: SheetBro;
   private rat!: Rat;
   private tentChaser!: TentChaser;
+  private announceBoard!: AnnounceBoard;
   private keyE!: Phaser.Input.Keyboard.Key;
   // The exit is the door drawn into the top-left corner of bg3
   private doorX = 166;
@@ -277,6 +279,10 @@ export default class MainScene extends Phaser.Scene {
 
     // Rat — wanders around the room, starting on the floor by the kitchen
     this.rat = new Rat(this, 800, 900);
+
+    // Announce board — sits over the "WORK HARD" sign on the back wall above
+    // the sofa, showing who has what in hand from irin-task-board
+    this.announceBoard = new AnnounceBoard(this, 890, 110);
 
     // Tent's personal ghost — lurks in the garage corner until Tent shows up.
     // Invisible while no one is logged in as Tent.
@@ -571,6 +577,15 @@ export default class MainScene extends Phaser.Scene {
     }
 
     this.rat.update(delta);
+
+    // Announce board proximity + interaction
+    const nearBoard = this.announceBoard.updateProximity(
+      this.player.x,
+      this.player.y,
+    );
+    if (nearBoard && pressE) {
+      this.announceBoard.interact();
+    }
 
     // Tent chaser — haunts whoever is Tent, local or remote
     this.tentChaser.update(time, delta, this.findTent());
