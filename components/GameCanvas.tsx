@@ -11,6 +11,7 @@ import SecretaryPanel from "./SecretaryPanel";
 import SheetBroPanel from "./SheetBroPanel";
 import TaskBoardPanel from "./TaskBoardPanel";
 import SayBar from "./SayBar";
+import MicButton from "./MicButton";
 import { logout, getUserId } from "./LoginPage";
 
 export default function GameCanvas() {
@@ -793,6 +794,11 @@ export default function GameCanvas() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Proximity voice toggle — sits left of the gear, same row */}
+      <div style={{ position: "absolute", top: 16, right: 72, zIndex: 100 }}>
+        <MicButton />
+      </div>
 
       {/* Settings button */}
       <div style={{ position: "absolute", top: 16, right: 16, zIndex: 100 }}>

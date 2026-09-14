@@ -13,6 +13,7 @@ area — it saves rediscovering the asset pipeline or the event wiring every tim
 | [0005](0005-fixed-roster-member-colors.md) | Fixed roster of six members, told apart by colour tint | Accepted |
 | [0006](0006-secretary-team-memory-tool-calling.md) | Secretary team memory: Project rows + tool calling over a plain text stream | Accepted |
 | [0007](0007-announce-board-cross-app-feed.md) | Announce board reads irin-task-board through a secret-protected feed | Accepted |
+| [0008](0008-proximity-voice-webrtc-mesh.md) | Proximity voice is a WebRTC mesh owned by the scene | Accepted |
 
 ## Format
 

@@ -44,6 +44,9 @@ export function initSocket(httpServer: HttpServer) {
   // socketId -> last known state
   const players = new Map<string, PlayerState>();
 
+  // socketIds with their mic on. Voice is opt-in, so this is a subset of players.
+  const voiceMembers = new Set<string>();
+
   io.on('connection', (socket) => {
     console.log(`[socket] connected: ${socket.id}`);
 
@@ -73,9 +76,38 @@ export function initSocket(httpServer: HttpServer) {
       socket.broadcast.emit('playerChat', { id: socket.id, text });
     });
 
+    // --- Proximity voice (see docs/adr/0008) --------------------------------
+    // The server is a blind relay: it never parses SDP or ICE, it only tracks
+    // who is in the mesh so a signal can be routed to a real participant.
+
+    socket.on('voice-join', () => {
+      voiceMembers.add(socket.id);
+      // The newcomer learns who is already in; the room learns about them.
+      socket.emit('voice-peers', {
+        ids: [...voiceMembers].filter((id) => id !== socket.id),
+      });
+      socket.broadcast.emit('voice-peer-join', { id: socket.id });
+    });
+
+    socket.on('voice-leave', () => {
+      if (voiceMembers.delete(socket.id)) {
+        socket.broadcast.emit('voice-peer-leave', { id: socket.id });
+      }
+    });
+
+    socket.on('voice-signal', (raw: { to?: unknown; data?: unknown }) => {
+      const to = typeof raw?.to === 'string' ? raw.to : '';
+      if (!to || !raw?.data) return;
+      if (!voiceMembers.has(to) || !voiceMembers.has(socket.id)) return;
+      io.to(to).emit('voice-signal', { from: socket.id, data: raw.data });
+    });
+
     socket.on('disconnect', () => {
       console.log(`[socket] disconnected: ${socket.id}`);
       players.delete(socket.id);
+      if (voiceMembers.delete(socket.id)) {
+        socket.broadcast.emit('voice-peer-leave', { id: socket.id });
+      }
       io.emit('playerLeft', { id: socket.id });
     });
   });

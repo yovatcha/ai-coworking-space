@@ -8,6 +8,7 @@ import TentChaser from "../entities/TentChaser";
 import GoogleBro from "../entities/GoogleBro";
 import SheetBro from "../entities/SheetBro";
 import AnnounceBoard from "../entities/AnnounceBoard";
+import VoiceChat from "../voice";
 import { resolveMember, resolveColor } from "@/lib/members";
 import { getMemberId, getColor } from "../identity";
 
@@ -79,6 +80,7 @@ const SOLIDS: Rect[] = [
 export default class MainScene extends Phaser.Scene {
   private player!: Player;
   private socket!: Socket;
+  private voice!: VoiceChat;
   private remotePlayers: Map<string, RemotePlayer> = new Map();
   private npc!: NPC;
   private googleBro!: GoogleBro;
@@ -96,6 +98,9 @@ export default class MainScene extends Phaser.Scene {
   // Throttle how often we emit position (ms)
   private lastEmit = 0;
   private readonly EMIT_INTERVAL = 50; // ~20 updates/sec
+  // Proximity voice needs far fewer updates than movement does
+  private lastVoiceTick = 0;
+  private readonly VOICE_INTERVAL = 150;
   // Last state actually sent — null until the first emit, so we always
   // announce ourselves once even if the player never moves
   private lastSent: {
@@ -333,6 +338,13 @@ export default class MainScene extends Phaser.Scene {
       this.player.setColor(color);
     };
 
+    // Mic button in the HUD toggles proximity voice
+    const onVoiceToggle = () => {
+      if (this.voice?.isEnabled()) this.voice.disable();
+      else void this.voice?.enable();
+    };
+
+    window.addEventListener("voice-toggle", onVoiceToggle);
     window.addEventListener("say-focus", onSayFocus);
     window.addEventListener("say-blur", onSayBlur);
     window.addEventListener("player-say", onSay);
@@ -342,6 +354,8 @@ export default class MainScene extends Phaser.Scene {
       window.removeEventListener("say-blur", onSayBlur);
       window.removeEventListener("player-say", onSay);
       window.removeEventListener("player-color", onColor);
+      window.removeEventListener("voice-toggle", onVoiceToggle);
+      this.voice?.destroy();
     });
   }
 
@@ -353,12 +367,15 @@ export default class MainScene extends Phaser.Scene {
     this.socket = io(socketUrl, {
       transports: ["polling", "websocket"],
     });
+    this.voice = new VoiceChat(this.socket);
 
     this.socket.on("connect", () => {
       console.log("[socket] connected as", this.socket.id);
       // Reconnects get a fresh socket id and empty server-side state,
       // so forget what we sent and re-announce on the next tick
       this.lastSent = null;
+      // Same reason: every voice peer id is now stale
+      this.voice?.resetOnReconnect();
     });
 
     this.socket.on("connect_error", (err) => {
@@ -453,6 +470,7 @@ export default class MainScene extends Phaser.Scene {
 
     // A player left
     this.socket.on("playerLeft", ({ id }: { id: string }) => {
+      this.voice?.removePeer(id);
       const remote = this.remotePlayers.get(id);
       if (remote) {
         remote.destroy();
@@ -617,6 +635,16 @@ export default class MainScene extends Phaser.Scene {
     this.doorHint.setVisible(nearDoor);
     if (nearDoor && pressE) {
       window.dispatchEvent(new CustomEvent("exit-door"));
+    }
+
+    // Voice volume follows distance — far coarser than the movement tick
+    if (time - this.lastVoiceTick > this.VOICE_INTERVAL) {
+      this.lastVoiceTick = time;
+      this.voice?.updateVolumes(
+        this.player.x,
+        this.player.y,
+        this.remotePlayers,
+      );
     }
 
     // Throttled position emit — skipped entirely while nothing changed
