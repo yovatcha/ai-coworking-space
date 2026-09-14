@@ -92,6 +92,13 @@ export default class VoiceChat {
       );
       return;
     }
+    if (this.status !== "requesting") {
+      // Toggled off while the permission prompt was still open — honour that
+      // rather than joining with a mic the user just said they did not want.
+      this.stream.getTracks().forEach((t) => t.stop());
+      this.stream = null;
+      return;
+    }
     this.setStatus("on");
     this.socket.emit("voice-join");
   }
